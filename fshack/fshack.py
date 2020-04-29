@@ -40,6 +40,7 @@ where necessary.)
     SYNOPSIS
 
         python fshack.py                                         \\
+	    -s|--subjectID <subjectDirInsideInputDir>			\\
             [-h] [--help]                                               \\
             [--json]                                                    \\
             [--man]                                                     \\
@@ -63,6 +64,10 @@ where necessary.)
         `fshack.py` ...
 
     ARGS
+
+	-s|--subjectID <subjectDirInsideInputDir>
+	A directory *within* the <inputDir> that contains the images for
+	recon-all to process.
 
         [-h] [--help]
         If specified, show help message and exit.
