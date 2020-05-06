@@ -149,7 +149,10 @@ class Fshack(ChrisApp):
         """
         print(Gstr_title)
         print('Version: %s' % self.get_version())
-        os.system('/usr/local/freesurfer/bin/recon-all -subjid %s/%s' % (options.inputdir, options.subjectID))
+        # do the equivalent of an 'ls' in the options.inputdir and just grab one of the DICOM *dcm files to pass on
+        str_inputFile = os.system('ls -1 %s/*dcm | head -n 1' % options.inputdir)
+        # and now you run it!
+        os.system('/usr/local/freesurfer/bin/recon-all -i %s/%s -subjid %s/%s -all -notalairach' % (options.inputdir, str_inputFile, options.outputdir, options.subjectID))
 
 
     def show_man_page(self):
