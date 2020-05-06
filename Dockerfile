@@ -24,13 +24,21 @@
 
 
 FROM fnndsc/ubuntu-python3:latest
+# FROM fnndsc/centos-python3:latest
 MAINTAINER fnndsc "dev@babymri.org"
 
 ENV APPROOT="/usr/src/fshack"
 COPY ["fshack", "${APPROOT}"]
 COPY ["requirements.txt", "${APPROOT}"]
+COPY ["freesurferlicense.txt", "/usr/local/freesurfer/.license"]
 
 WORKDIR $APPROOT
+
+# Now add the explicit commands to pull, unpack and "install" 
+# FreeSurfer using "RUN ..."
+# For ubuntu... apt install ....
+# For Centos... yum install ....
+
 
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
