@@ -32,7 +32,6 @@ ENV FREESURFER_HOME="/usr/local/freesurfer"
 COPY ["fshack", "${APPROOT}"]
 COPY ["requirements.txt", "${APPROOT}"]
 COPY ["license.txt", "${FREESURFER_HOME}"]
-COPY ["SetUpFreeSurfer.sh", "${FREESURFER_HOME}"]
 
 WORKDIR $APPROOT
 
