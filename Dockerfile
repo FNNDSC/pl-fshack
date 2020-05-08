@@ -38,9 +38,9 @@ WORKDIR $APPROOT
 # FreeSurfer using "RUN ..."
 # For ubuntu... apt install ....
 RUN apt update        # update the Ubunutu
-    apt install wget  # install wget to download freesurfer
+    apt -y install wget  # install wget to download freesurfer
     # Download freesurfer (version 6)
-    wget https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/6.0.0/freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz
+    wget -y https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/6.0.0/freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz
     # Untar it
     tar -C /usr/local -xzvf freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz
     # remove the tar.gz file
@@ -56,7 +56,7 @@ RUN apt update        # update the Ubunutu
     apt install git
     git clone https://github.com/FNNDSC/SAG-anon
     # move SAG-anon to correct directory
-    mv SAG-anon /usr/local/freesurfer/subjects
+    # mv SAG-anon /usr/local/freesurfer/subjects
     # Note that to run recon-all /SAG-anon*** you need to be in the correct directory
 # For Centos... yum install ....
 
