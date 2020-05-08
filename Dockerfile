@@ -28,37 +28,32 @@ FROM fnndsc/ubuntu-python3:latest
 MAINTAINER fnndsc "dev@babymri.org"
 
 ENV APPROOT="/usr/src/fshack"
+ENV FREESURFER_HOME="/usr/local/freesurfer"
 COPY ["fshack", "${APPROOT}"]
 COPY ["requirements.txt", "${APPROOT}"]
-COPY ["license.txt", "/usr/local/freesurfer"]
+COPY ["license.txt", "${FREESURFER_HOME}"]
+COPY ["SetUpFreeSurfer.sh", "${FREESURFER_HOME}"]
 
 WORKDIR $APPROOT
 
 # Now add the explicit commands to pull, unpack and "install" 
 # FreeSurfer using "RUN ..."
 # For ubuntu... apt install ....
-RUN apt update        # update the Ubunutu
-    apt -y install wget  # install wget to download freesurfer
-    # Download freesurfer (version 6)
-    wget -y https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/6.0.0/freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz
-    # Untar it
-    tar -C /usr/local -xzvf freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz
-    # remove the tar.gz file
-    rm -rf freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz
-    # package requirements
+RUN apt update
+RUN apt install -y wget
+RUN wget https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/6.0.0/freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz && \
+    tar -C /usr/local -xzvf freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz && \
     apt-get -y install bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libjpeg62-dev
-    # Setup and configuration
-    export FREESURFER_HOME=/usr/local/freesurfer
-    source $FREESURFER_HOME/SetUpFreeSurfer.sh
-    export SUBJECTS_DIR=/usr/local/freesurfer/subjects
-    # move license.txt into freesurfer directory
-    # get git for SAG-anon and put SAG-anon inside subjects directory
-    apt install git
+
+# Setup environment variables for freesurfer
+ENV FREESURFER_HOME="/usr/local/freesurfer"
+ENV FSFAST_HOME="${FREESURFER_HOME}/fsfast"
+ENV FSF_OUTPUT_FORMAT="nii.gz"
+ENV SUBJECTS_DIR="${FREESURFER_HOME}/subjects"
+ENV MNI_DIR="${FREESURFER_HOME}/mni"
+
+RUN apt install -y git && \
     git clone https://github.com/FNNDSC/SAG-anon
-    # move SAG-anon to correct directory
-    # mv SAG-anon /usr/local/freesurfer/subjects
-    # Note that to run recon-all /SAG-anon*** you need to be in the correct directory
-# For Centos... yum install ....
 
 
 RUN pip install --upgrade pip
