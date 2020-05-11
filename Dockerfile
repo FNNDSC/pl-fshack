@@ -52,10 +52,6 @@ ENV FSF_OUTPUT_FORMAT="nii.gz"
 ENV SUBJECTS_DIR="${FREESURFER_HOME}/subjects"
 ENV MNI_DIR="${FREESURFER_HOME}/mni"
 
-RUN apt install -y git && \
-    git clone https://github.com/FNNDSC/SAG-anon
-
-
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
