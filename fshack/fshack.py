@@ -143,15 +143,20 @@ class Fshack(ChrisApp):
                             optional    = False,
                             default     = "")
 
+    def getFirstFile(self, directory):
+        for file in os.listdir(directory):
+            if (file.endswith(".dcm")):
+                return file
+
     def run(self, options):
         """
         Define the code to be run by this plugin app.
         """
         print(Gstr_title)
         print('Version: %s' % self.get_version())
-        # do the equivalent of an 'ls' in the options.inputdir and just grab one of the DICOM *dcm files to pass on
-        str_inputFile = os.system('ls -1 %s/*dcm | head -n 1' % options.inputdir)
-        # and now you run it!
+        
+        # get first file inside of the directory
+        str_inputFile = self.getFirstFile(options.inputdir)
         os.system('/usr/local/freesurfer/bin/recon-all -i %s/%s -subjid %s/%s -all -notalairach' % (options.inputdir, str_inputFile, options.outputdir, options.subjectID))
 
 
