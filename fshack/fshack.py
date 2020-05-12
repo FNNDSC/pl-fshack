@@ -12,6 +12,7 @@
 
 import os
 import sys
+import subprocess
 sys.path.append(os.path.dirname(__file__))
 
 # import the Chris app superclass
@@ -143,7 +144,7 @@ class Fshack(ChrisApp):
                             optional    = False,
                             default     = "")
 
-    def getFirstFile(self, directory):
+    def get_first_file(self, directory):
         for file in os.listdir(directory):
             if (file.endswith(".dcm")):
                 return file
@@ -156,7 +157,7 @@ class Fshack(ChrisApp):
         print('Version: %s' % self.get_version())
         
         # get first file inside of the directory
-        str_inputFile = self.getFirstFile(options.inputdir)
+        str_inputFile = self.get_first_file(options.inputdir)
         os.system('/usr/local/freesurfer/bin/recon-all -i %s/%s -subjid %s/%s -all -notalairach' % (options.inputdir, str_inputFile, options.outputdir, options.subjectID))
 
 

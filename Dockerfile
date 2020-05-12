@@ -27,32 +27,30 @@ FROM fnndsc/ubuntu-python3:latest
 # FROM fnndsc/centos-python3:latest
 MAINTAINER fnndsc "dev@babymri.org"
 
-ENV APPROOT="/usr/src/fshack"
-ENV FREESURFER_HOME="/usr/local/freesurfer"
+ENV APPROOT="/usr/src/fshack" \
+    FREESURFER_HOME="/usr/local/freesurfer"
 COPY ["fshack", "${APPROOT}"]
 COPY ["requirements.txt", "${APPROOT}"]
-COPY ["license.txt", "${FREESURFER_HOME}"]
+COPY ["license.txt", "${APPROOT}"]
+COPY ["SetUpFreeSurfer.sh", "${APPROOT}"]
+COPY ["FreeSurferEnv.sh", "${APPROOT}"]
 
 WORKDIR $APPROOT
 
 # Now add the explicit commands to pull, unpack and "install" 
 # FreeSurfer using "RUN ..."
 # For ubuntu... apt install ...
-RUN apt update
-RUN apt install -y wget
-RUN wget https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/6.0.0/freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz && \
+RUN apt update && \
+    pip install --upgrade pip && \
+    pip install -r requirements.txt
+
+RUN apt install -y wget && \
+    wget https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/6.0.0/freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz && \
     tar -C /usr/local -xzvf freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz && \
     rm -rf freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz && \
-    apt-get -y install bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libjpeg62-dev
+    apt-get -y install bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libjpeg62-dev && \
+    mv license.txt /usr/local/freesurfer
 
-# Setup environment variables for freesurfer
-ENV FREESURFER_HOME="/usr/local/freesurfer"
-ENV FSFAST_HOME="${FREESURFER_HOME}/fsfast"
-ENV FSF_OUTPUT_FORMAT="nii.gz"
-ENV SUBJECTS_DIR="${FREESURFER_HOME}/subjects"
-ENV MNI_DIR="${FREESURFER_HOME}/mni"
-
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+# ENV setup inside freesurfer.env
 
 CMD ["fshack.py", "--help"]
