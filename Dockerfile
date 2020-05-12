@@ -32,8 +32,6 @@ ENV APPROOT="/usr/src/fshack" \
 COPY ["fshack", "${APPROOT}"]
 COPY ["requirements.txt", "${APPROOT}"]
 COPY ["license.txt", "${APPROOT}"]
-COPY ["SetUpFreeSurfer.sh", "${APPROOT}"]
-COPY ["FreeSurferEnv.sh", "${APPROOT}"]
 
 WORKDIR $APPROOT
 
