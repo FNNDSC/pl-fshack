@@ -27,8 +27,7 @@ FROM fnndsc/ubuntu-python3:latest
 # FROM fnndsc/centos-python3:latest
 MAINTAINER fnndsc "dev@babymri.org"
 
-ENV APPROOT="/usr/src/fshack" \
-    FREESURFER_HOME="/usr/local/freesurfer"
+ENV APPROOT="/usr/src/fshack"
 COPY ["fshack", "${APPROOT}"]
 COPY ["requirements.txt", "${APPROOT}"]
 COPY ["license.txt", "${APPROOT}"]
@@ -49,6 +48,19 @@ RUN apt install -y wget && \
     apt-get -y install bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libjpeg62-dev && \
     mv license.txt /usr/local/freesurfer
 
-# ENV setup inside freesurfer.env
+ENV PATH="/usr/local/freesurfer/bin:/usr/local/freesurfer/fsfast/bin:/usr/local/freesurfer/tktools:/usr/local/freesurfer/mni/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:" \
+    FREESURFER_HOME="/usr/local/freesurfer" \
+    SUBJECTS_DIR="/outgoing" \
+    MINC_LIB_DIR="/usr/local/freesurfer/mni/lib" \
+    MNI_DATAPATH="/usr/local/freesurfer/mni/data" \
+    PERL5LIB="/usr/local/freesurfer/mni/share/perl5" \
+    MINC_BIN_DIR="/usr/local/freesurfer/mni/bin" \
+    MNI_PERL5LIB="/usr/local/freesurfer/mni/share/perl5" \
+    FMRI_ANALYSIS_DIR="/usr/local/freesurfer/fsfast" \
+    FUNCTIONALS_DIR="/usr/local/freesurfer/sessions" \
+    LOCAL_DIR="/usr/local/freesurfer/local" \
+    FSFAST_HOME="/usr/local/freesurfer/fsfast" \
+    MNI_DIR="/usr/local/freesurfer/mni" \
+    FSF_OUTPUT_FORMAT="nii.gz"
 
 CMD ["fshack.py", "--help"]

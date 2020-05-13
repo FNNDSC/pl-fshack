@@ -12,7 +12,6 @@
 
 import os
 import sys
-import subprocess
 sys.path.append(os.path.dirname(__file__))
 
 # import the Chris app superclass
@@ -51,14 +50,6 @@ where necessary.)
             [--version]                                                 \\
             <inputDir>                                                  \\
             <outputDir> 
-
-    BRIEF EXAMPLE
-
-        * Bare bones execution
-
-            mkdir in out && chmod 777 out
-            python fshack.py   \\
-                                in    out
 
     DESCRIPTION
 
@@ -158,6 +149,12 @@ class Fshack(ChrisApp):
         
         # get first file inside of the directory
         str_inputFile = self.get_first_file(options.inputdir)
+        
+        # TODO - add -parallel -openmp <number of threads> to this
+        # fshack <commands> -p <number of threads>
+        # that flag will concatenate 2 necessary flags to run multiple
+        # processors
+        # make sure -notalairach flag is also available on freesurfer v7 
         os.system('/usr/local/freesurfer/bin/recon-all -i %s/%s -subjid %s/%s -all -notalairach' % (options.inputdir, str_inputFile, options.outputdir, options.subjectID))
 
 
