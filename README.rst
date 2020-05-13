@@ -96,9 +96,9 @@ Copy and modify the command below as needed.
 
     docker run -v <pathToInput>:/incoming -v <pathToOutput>:/outgoing -ti fnndsc/pl-fshack fshack.py --subjectID <outputName> /incoming /outgoing
 
-*<pathToInput> is the path to your input files
-*<pathToOutput> is the path to where you want your output to go
-*<outputName> is the name of the output directory
+* <pathToInput> is the path to your input files
+* <pathToOutput> is the path to where you want your output to go
+* <outputName> is the name of the output directory
 
 The path must be an absolute path (in other words, just a specific path).
 
