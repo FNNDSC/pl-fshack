@@ -20,19 +20,17 @@ from chrisapp.base import ChrisApp
 
 Gstr_title = """
 
-Generate a title from 
-http://patorjk.com/software/taag/#p=display&f=Doom&t=fshack
+  __     _                _    
+ / _|   | |              | |   
+| |_ ___| |__   __ _  ___| | __
+|  _/ __| '_ \ / _` |/ __| |/ /
+| | \__ \ | | | (_| | (__|   < 
+|_| |___/_| |_|\__,_|\___|_|\_\
+                               
 
 """
 
 Gstr_synopsis = """
-
-(Edit this in-line help for app specifics. At a minimum, the 
-flags below are supported -- in the case of DS apps, both
-positional arguments <inputDir> and <outputDir>; for FS apps
-only <outputDir> -- and similarly for <in> <out> directories
-where necessary.)
-
     NAME
 
        fshack.py 
@@ -41,6 +39,7 @@ where necessary.)
 
         python fshack.py                                         \\
 	    -s|--subjectID <subjectDirInsideInputDir>			\\
+            -p <numOfProcessors>                                        \\
             [-h] [--help]                                               \\
             [--json]                                                    \\
             [--man]                                                     \\
@@ -53,13 +52,43 @@ where necessary.)
 
     DESCRIPTION
 
-        `fshack.py` ...
+        This program is meant to be run inside of the container. To run with
+        Docker, copy this command and modify as needed:
+
+        docker run -v <pathToInput>:/incoming -v <pathToOutput>:/outgoing -ti fnndsc/pl-fshack fshack.py --subjectID <outputName> /incoming /outgoing
+
+        <pathToInput> is the path to your input files
+        <pathToOutput> is the path to where you want your output to go
+        <outputName> is the name of the output directory
+
+        The path must be an absolute path (in other words, just a specific path).
+
+        Assuming you're on a Windows operating system, this is what it might look
+        like:
+
+        Example:
+
+        docker run -v /home/user/desktop:/incoming -v /home/user/desktop:/outgoing -ti fnndsc/pl-fshack fshack.py --subjectID myOutputFiles /incoming /outgoing
+
+        If you want to specify how many processors the plugin will use, 
+        add the -p flag (default is 1), then the number of processors.
+        It is recommended to allocate as much processors as you can
+        spare to speed up the plugin.
+
+
+        Example:
+
+        docker run -v /home/user/desktop:/incoming -v /home/user/desktop:/outgoing -ti fnndsc/pl-fshack fshack.py --subjectID myOutputFiles /incoming /outgoing -p 4
 
     ARGS
 
 	-s|--subjectID <subjectDirInsideInputDir>
 	A directory *within* the <inputDir> that contains the images for
 	recon-all to process.
+
+        -p <numOfProcessors>
+        Specifies the number processors that this plugin will run use. Default 
+        number is 1.
 
         [-h] [--help]
         If specified, show help message and exit.
