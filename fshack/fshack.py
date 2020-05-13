@@ -134,6 +134,12 @@ class Fshack(ChrisApp):
                             dest        = 'subjectID',
                             optional    = False,
                             default     = "")
+        self.add_argument("-p",
+                            help        = "Number of processors to use",
+                            type        = int,
+                            dest        = 'processors',
+                            optional    = True,
+                            default     = 1)
 
     def get_first_file(self, directory):
         for file in os.listdir(directory):
@@ -150,12 +156,7 @@ class Fshack(ChrisApp):
         # get first file inside of the directory
         str_inputFile = self.get_first_file(options.inputdir)
         
-        # TODO - add -parallel -openmp <number of threads> to this
-        # fshack <commands> -p <number of threads>
-        # that flag will concatenate 2 necessary flags to run multiple
-        # processors
-        # make sure -notalairach flag is also available on freesurfer v7 
-        os.system('/usr/local/freesurfer/bin/recon-all -i %s/%s -subjid %s/%s -all -notalairach' % (options.inputdir, str_inputFile, options.outputdir, options.subjectID))
+        os.system('/usr/local/freesurfer/bin/recon-all -i %s/%s -subjid %s/%s -all -notalairach -parallel -openmp %d' % (options.inputdir, str_inputFile, options.outputdir, options.subjectID, options.processors))
 
 
     def show_man_page(self):
