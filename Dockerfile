@@ -43,9 +43,9 @@ RUN apt update && \
     pip install -r requirements.txt
 
 RUN apt install -y wget && \
-    wget https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/6.0.0/freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz && \
-    tar -C /usr/local -xzvf freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz && \
-    rm -rf freesurfer-Linux-centos6_x86_64-stable-pub-v6.0.0.tar.gz && \
+    wget https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.1.0/freesurfer-linux-centos8_x86_64-7.1.0.tar.gz && \
+    tar -C /usr/local -xzvf freesurfer-linux-centos8_x86_64-7.1.0.tar.gz && \
+    rm -rf freesurfer-linux-centos8_x86_64-7.1.0.tar.gz && \
     apt-get -y install bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libjpeg62-dev && \
     mv license.txt /usr/local/freesurfer
 
