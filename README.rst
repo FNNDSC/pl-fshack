@@ -25,8 +25,8 @@ Synopsis
 .. code::
 
     python fshack.py                                         \\
-	    -s|--subjectID <subjectDirInsideInputDir>			\\
-            -p <numOfProcessors>                                        \\
+	    -s|--subjectID                                      			\\
+            -a|--reconall                                               \\
             [-h] [--help]                                               \\
             [--json]                                                    \\
             [--man]                                                     \\
@@ -55,9 +55,8 @@ Arguments
 	A directory *within* the <inputDir> that contains the images for
 	recon-all to process.
 
-    -p <numOfProcessors>
-    Specifies the number processors that this plugin will run use. Default 
-    number is 1.
+    -a|--reconall
+    Speciies all the arguments that FreeSurfer's recon-all accepts
 
     [-h] [--help]
     If specified, show help message.
@@ -83,44 +82,46 @@ Run
 
 This ``plugin`` can be run as a containerized docker image.
 
+First we need to fetch sample DICOM images. Follow the steps below to fetch sample DICOM images.
 
+
+- Clone this repository (SAG-anon) to your local computer.
+
+::
+
+    git clone https://github.com/FNNDSC/SAG-anon.git
+
+- Make sure the ``SAG-anon`` directory is placed in the same directory as your ``pl-fshack`` directory.
 
 Using ``docker run``
 ~~~~~~~~~~~~~~~~~~~~
 
 To run using ``docker``, be sure to assign an "input" directory to ``/incoming`` and an output directory to ``/outgoing``. *Make sure that the* ``/out`` *directory is world writable!*
 
+- Make sure your current working directory is the one which contains both ``SAG-anon`` and ``pl-fshack``.
+
+- Create an output directory named ``results`` in the current working directory.
+
+- Pull the ``fnndsc/pl-fshack`` image using the following command.
+
+::
+
+    docker pull fnndsc/pl-fshack
+
 Copy and modify the command below as needed.
 
 .. code:: bash
 
-    docker run -v <pathToInput>:/incoming -v <pathToOutput>:/outgoing -ti fnndsc/pl-fshack fshack.py --subjectID <outputName> /incoming /outgoing
-
-* <pathToInput> is the path to your input files
-* <pathToOutput> is the path to where you want your output to go
-* <outputName> is the name of the output directory
+    docker run -v /SAG-anon/:/incoming -v /results/:/outgoing   \\
+        fnndsc/pl-fshack fshack.py                                          \\
+        --subjectID FShackOutput                                            \\
+        /incoming /outgoing
 
 The path must be an absolute path (in other words, just a specific path).
 
-If you want to specify how many processors this plugin will use, 
-add the -p flag (default is 1), then the number of processors.
-It is recommended to allocate as much processors as you can
-spare to speed up the plugin.
 
-Examples
---------
+More Examples
+-------------
 
-Assuming you're on a Windows operating system, this is what it might look
-like:
-
-.. code::
-    
-    docker run -v /home/user/desktop/myInput:/incoming -v /home/user/desktop/myOutput:/outgoing -ti fnndsc/pl-fshack fshack.py --subjectID myOutputFiles /incoming /outgoing
-
-
-To specify the number of processors:
-
-.. code::
-
-    docker run -v /home/user/desktop/myInput:/incoming -v /home/user/desktop/myOutput:/outgoing -ti fnndsc/pl-fshack fshack.py --subjectID myOutputFiles /incoming /outgoing -p 4
-
+To specify "recon-all" arguments:
+    (In-Progress)

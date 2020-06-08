@@ -37,9 +37,9 @@ Gstr_synopsis = """
 
     SYNOPSIS
 
-        python fshack.py                                         \\
-	    -s|--subjectID <subjectDirInsideInputDir>			\\
-            -p <numOfProcessors>                                        \\
+        python fshack.py                                                \\
+	    -s|--subjectID <subjectDirInsideInputDir>			        \\
+            -a|--reconall <ReconallArguments>                           \\
             [-h] [--help]                                               \\
             [--json]                                                    \\
             [--man]                                                     \\
@@ -82,13 +82,11 @@ Gstr_synopsis = """
 
     ARGS
 
-	-s|--subjectID <subjectDirInsideInputDir>
-	A directory *within* the <inputDir> that contains the images for
-	recon-all to process.
+	    -s|--subjectID <subjectDirInsideInputDir>
+	    A directory *within* the <outputDir> that stores the output of the recon-all
 
-        -p <numOfProcessors>
-        Specifies the number processors that this plugin will run use. Default 
-        number is 1.
+        -a|--reconall
+        Specifies the string arguments for recon-all that Freesurfer will use.
 
         [-h] [--help]
         If specified, show help message and exit.
@@ -163,12 +161,13 @@ class Fshack(ChrisApp):
                             dest        = 'subjectID',
                             optional    = False,
                             default     = "")
-        self.add_argument("-p",
-                            help        = "Number of processors to use",
-                            type        = int,
-                            dest        = 'processors',
+        self.add_argument("-a", "--reconall",
+                            help        = "FS arguments to pass",
+                            type        = str,
+                            dest        = 'reconall',
                             optional    = True,
-                            default     = 1)
+                            nargs       = '*',
+                            default     = "")
 
     def get_first_file(self, directory):
         for file in os.listdir(directory):
@@ -184,9 +183,10 @@ class Fshack(ChrisApp):
         
         # get first file inside of the directory
         str_inputFile = self.get_first_file(options.inputdir)
-        
-        os.system('/usr/local/freesurfer/bin/recon-all -i %s/%s -subjid %s/%s -all -notalairach -parallel -openmp %d' % (options.inputdir, str_inputFile, options.outputdir, options.subjectID, options.processors))
 
+        print("docker")
+        os.system('/usr/local/freesurfer/bin/recon-all -i %s/%s -subjid %s/%s %s' % (options.inputdir, str_inputFile, options.outputdir, options.subjectID, options.reconall))
+        # -all -notalairach -parallel -openmp %d
 
     def show_man_page(self):
         """
