@@ -214,17 +214,25 @@ class Fshack(ChrisApp):
         # for option in options.args:
         #     str_args = "-" + option + " "
 
-        if options.exec == 'recon-all':
+        if options.exec == 'recon-all': # -all -notalairach -parallel -openmp %d
             str_cmd = '/usr/local/freesurfer/bin/%s -i %s/%s -subjid %s/%s %s' % \
                       (options.exec, options.inputdir, options.inputFile, \
                        options.outputdir, options.outputFile, options.args)
-        if options.exec == 'mri_convert':
+        if options.exec == 'mri_convert': # --split -zo
             str_cmd = '/usr/local/freesurfer/bin/%s %s/%s  %s/%s %s' % \
                       (options.exec, options.inputdir, options.inputFile, \
                        options.outputdir, options.outputFile, options.args)
+        if options.exec == 'mri_info': # --conformed --type
+            str_cmd = '/usr/local/freesurfer/bin/%s %s/%s %s > %s/%s' % \
+                      (options.exec, options.inputdir, options.inputFile, \
+                       options.args, options.outputdir, options.outputFile)
+        if options.exec == 'mris_info': # --ncols nrows
+            str_cmd = '/usr/local/freesurfer/bin/%s %s/%s %s > %s/%s' % \
+                      (options.exec, options.inputdir, options.inputFile, \
+                       options.args, options.outputdir, options.outputFile)
 
         os.system(str_cmd)
-        # -all -notalairach -parallel -openmp %d
+
 
     def show_man_page(self):
         """
