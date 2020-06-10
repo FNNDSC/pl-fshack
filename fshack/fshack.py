@@ -16,7 +16,7 @@ sys.path.append(os.path.dirname(__file__))
 
 # import the Chris app superclass
 from chrisapp.base import ChrisApp
-
+import pudb
 
 Gstr_title = """
 
@@ -159,19 +159,38 @@ class Fshack(ChrisApp):
                             help        = "The subject directory",
                             type        = str,
                             dest        = 'subjectID',
-                            optional    = False,
+                            optional    = True,
                             default     = "")
-        self.add_argument("-a", "--reconall",
+        self.add_argument("-a", "--args",
                             help        = "FS arguments to pass",
                             type        = str,
-                            dest        = 'reconall',
+                            dest        = 'args',
                             optional    = True,
-                            nargs       = '*',
                             default     = "")
+        self.add_argument("-e", "--exec",
+                          help="FS app to run",
+                          type=str,
+                          dest='exec',
+                          optional=True,
+                          default="recon-all")
+        self.add_argument("-i", "--inputFile",
+                          help="input file",
+                          type=str,
+                          dest='inputFile',
+                          optional=True,
+                          default="")
+        self.add_argument("-o", "--outputFile",
+                          help="output file",
+                          type=str,
+                          dest='outputFile',
+                          optional=True,
+                          default="")
 
     def get_first_file(self, directory):
         for file in os.listdir(directory):
-            if (file.endswith(".dcm")):
+            if file.endswith(".dcm"):
+                return file
+            elif file.endswith(".nii"):
                 return file
 
     def run(self, options):
@@ -184,8 +203,27 @@ class Fshack(ChrisApp):
         # get first file inside of the directory
         str_inputFile = self.get_first_file(options.inputdir)
 
-        print("docker")
-        os.system('/usr/local/freesurfer/bin/recon-all -i %s/%s -subjid %s/%s %s' % (options.inputdir, str_inputFile, options.outputdir, options.subjectID, options.reconall))
+        # pudb.set_trace()
+
+        # recon-all -i file.dcm -subjid subject
+        # fshack.py --exec recon-all --args '-i /tmp/file.dcm -subjid /tmp/subject ' -- /tmp /tmp
+        # str_cmd = '/usr/local/freesurfer/bin/%s %s' % (options.exec, options.args)
+            # mri_info, mris_info
+
+        # str_args = ""
+        # for option in options.args:
+        #     str_args = "-" + option + " "
+
+        if options.exec == 'recon-all':
+            str_cmd = '/usr/local/freesurfer/bin/%s -i %s/%s -subjid %s/%s %s' % \
+                      (options.exec, options.inputdir, options.inputFile, \
+                       options.outputdir, options.outputFile, options.args)
+        if options.exec == 'mri_convert':
+            str_cmd = '/usr/local/freesurfer/bin/%s %s/%s  %s/%s %s' % \
+                      (options.exec, options.inputdir, options.inputFile, \
+                       options.outputdir, options.outputFile, options.args)
+
+        os.system(str_cmd)
         # -all -notalairach -parallel -openmp %d
 
     def show_man_page(self):
