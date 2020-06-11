@@ -25,17 +25,16 @@ Synopsis
 .. code::
 
     python fshack.py                                         \\
-	    -s|--subjectID                                       	\\
-            -e|--exec                                                   \\
-            -a|--args                                                   \\
-            -i|--inputFile                                              \\
-            -o|--outputFile                                             \\
+            -i|--inputFile <inputFileWithinInputDir>                  \\
+            -o|--outputFile <outputFileWithinOutputDir>                 \\
+            [-e|--exec <commandToExec>]                                 \\
+            [-a|--args <argsPassedToExec> ]                             \\
             [-h] [--help]                                               \\
             [--json]                                                    \\
             [--man]                                                     \\
             [--meta]                                                    \\
             [--savejson <DIR>]                                          \\
-            [-v <level>] [--verbosity <level>]                          \\
+            [-v|--verbosity <level>]                                    \\
             [--version]                                                 \\
             <inputDir>                                                  \\
             <outputDir> 
@@ -54,22 +53,19 @@ Arguments
 
 .. code::
 
-    -s|--subjectID <subjectDirInsideInputDir>
-	A directory *within* the <inputDir> that contains the images for
-	recon-all to process.
+    -i|--inputFile <inputFileWithinInputDir>
+    Input file to convert present in inputDir. Typically a DICOM file or a nifti volume.
 
-    -e|--exec
-    Specifies the Freesurfer argument to execute.
+    -o|--outputFile <outputFileWithinOutputDir>
+    Output file/directory name to store the output in within the outputDir.
+    Note: This argument is used in place of -s|--subjectID <subjID> of FreeSurfer
 
-    -a|--args
-    Specifies all the arguments within quotes (''), that FreeSurfer's
+    [-e|--exec <commandToExec>]
+    Specifies the Freesurfer command to execute.
+
+    [-a|--args <argsPassedToExec>]
+    Specifies all the arguments within quotes (''), that FreeSurfer's commands:
     recon-all, mri_convert, mri_info, and mris_info accepts
-
-    -i|--inputFile
-    Input file to convert. Typically a DICOM file or a nifti volume.
-
-    -o|--outputFile
-    Output file/directory name to store the output in.
 
     [-h] [--help]
     If specified, show help message.
@@ -141,7 +137,7 @@ To run using ``docker``, be sure to assign an "input" directory to ``/incoming``
 Examples
 --------
 
-Copy and modify the command below as needed.
+Copy and modify the different commands below as needed.
 
 .. code:: bash
 
@@ -151,6 +147,16 @@ Copy and modify the command below as needed.
         -o FShackOutput                                                     \\
         --exec recon-all                                                    \\
         --args '-all -notalairach'                                          \\
+        /incoming /outgoing
+
+.. code:: bash
+
+    docker run -v /SAG-anon-nii/:/incoming -v /results/:/outgoing   \\
+        fnndsc/pl-fshack fshack.py                                          \\
+        -i SAG-anon.nii                                                     \\
+        -o FShackOutput                                                     \\
+        --exec mri_convert                                                  \\
+        --args '--split'                                                    \\
         /incoming /outgoing
 
 The path must be an absolute path (in other words, just a specific path).

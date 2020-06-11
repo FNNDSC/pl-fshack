@@ -155,12 +155,12 @@ class Fshack(ChrisApp):
         Define the CLI arguments accepted by this plugin app.
         Use self.add_argument to specify a new app argument.
         """
-        self.add_argument("-s", "--subjectID",
-                            help        = "The subject directory",
-                            type        = str,
-                            dest        = 'subjectID',
-                            optional    = True,
-                            default     = "")
+        # self.add_argument("-s", "--subjectID",
+        #                     help        = "The subject directory",
+        #                     type        = str,
+        #                     dest        = 'subjectID',
+        #                     optional    = True,
+        #                     default     = "")
         self.add_argument("-a", "--args",
                             help        = "FS arguments to pass",
                             type        = str,
@@ -177,13 +177,13 @@ class Fshack(ChrisApp):
                           help="input file",
                           type=str,
                           dest='inputFile',
-                          optional=True,
+                          optional=False,
                           default="")
         self.add_argument("-o", "--outputFile",
                           help="output file",
                           type=str,
                           dest='outputFile',
-                          optional=True,
+                          optional=False,
                           default="")
 
     def get_first_file(self, directory):
@@ -205,14 +205,6 @@ class Fshack(ChrisApp):
 
         # pudb.set_trace()
 
-        # recon-all -i file.dcm -subjid subject
-        # fshack.py --exec recon-all --args '-i /tmp/file.dcm -subjid /tmp/subject ' -- /tmp /tmp
-        # str_cmd = '/usr/local/freesurfer/bin/%s %s' % (options.exec, options.args)
-            # mri_info, mris_info
-
-        # str_args = ""
-        # for option in options.args:
-        #     str_args = "-" + option + " "
 
         if options.exec == 'recon-all': # -all -notalairach -parallel -openmp %d
             str_cmd = '/usr/local/freesurfer/bin/%s -i %s/%s -subjid %s/%s %s' % \
@@ -226,7 +218,7 @@ class Fshack(ChrisApp):
             str_cmd = '/usr/local/freesurfer/bin/%s %s/%s %s > %s/%s' % \
                       (options.exec, options.inputdir, options.inputFile, \
                        options.args, options.outputdir, options.outputFile)
-        if options.exec == 'mris_info': # --ncols nrows
+        if options.exec == 'mris_info': # --ncols #nrows
             str_cmd = '/usr/local/freesurfer/bin/%s %s/%s %s > %s/%s' % \
                       (options.exec, options.inputdir, options.inputFile, \
                        options.args, options.outputdir, options.outputFile)
