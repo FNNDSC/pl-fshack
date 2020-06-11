@@ -12,6 +12,7 @@
 
 import os
 import sys
+
 sys.path.append(os.path.dirname(__file__))
 
 # import the Chris app superclass
@@ -116,26 +117,26 @@ class Fshack(ChrisApp):
     """
     This app will house a complete FreeSurfer install and run it via the plugin.
     """
-    AUTHORS                 = 'FNNDSC (dev@babyMRI.org)'
-    SELFPATH                = os.path.dirname(os.path.abspath(__file__))
-    SELFEXEC                = os.path.basename(__file__)
-    EXECSHELL               = 'python3'
-    TITLE                   = 'A quick-n-dirty attempt at hacking a FreeSurfer ChRIS plugin'
-    CATEGORY                = ''
-    TYPE                    = 'ds'
-    DESCRIPTION             = 'This app will house a complete FreeSurfer install and run it via the plugin'
-    DOCUMENTATION           = 'http://wiki'
-    VERSION                 = '0.1'
-    ICON                    = '' # url of an icon image
-    LICENSE                 = 'Opensource (MIT)'
-    MAX_NUMBER_OF_WORKERS   = 1  # Override with integer value
-    MIN_NUMBER_OF_WORKERS   = 1  # Override with integer value
-    MAX_CPU_LIMIT           = '' # Override with millicore value as string, e.g. '2000m'
-    MIN_CPU_LIMIT           = '' # Override with millicore value as string, e.g. '2000m'
-    MAX_MEMORY_LIMIT        = '' # Override with string, e.g. '1Gi', '2000Mi'
-    MIN_MEMORY_LIMIT        = '' # Override with string, e.g. '1Gi', '2000Mi'
-    MIN_GPU_LIMIT           = 0  # Override with the minimum number of GPUs, as an integer, for your plugin
-    MAX_GPU_LIMIT           = 0  # Override with the maximum number of GPUs, as an integer, for your plugin
+    AUTHORS = 'FNNDSC (dev@babyMRI.org)'
+    SELFPATH = os.path.dirname(os.path.abspath(__file__))
+    SELFEXEC = os.path.basename(__file__)
+    EXECSHELL = 'python3'
+    TITLE = 'A quick-n-dirty attempt at hacking a FreeSurfer ChRIS plugin'
+    CATEGORY = ''
+    TYPE = 'ds'
+    DESCRIPTION = 'This app will house a complete FreeSurfer install and run it via the plugin'
+    DOCUMENTATION = 'http://wiki'
+    VERSION = '0.1'
+    ICON = ''  # url of an icon image
+    LICENSE = 'Opensource (MIT)'
+    MAX_NUMBER_OF_WORKERS = 1  # Override with integer value
+    MIN_NUMBER_OF_WORKERS = 1  # Override with integer value
+    MAX_CPU_LIMIT = ''  # Override with millicore value as string, e.g. '2000m'
+    MIN_CPU_LIMIT = ''  # Override with millicore value as string, e.g. '2000m'
+    MAX_MEMORY_LIMIT = ''  # Override with string, e.g. '1Gi', '2000Mi'
+    MIN_MEMORY_LIMIT = ''  # Override with string, e.g. '1Gi', '2000Mi'
+    MIN_GPU_LIMIT = 0  # Override with the minimum number of GPUs, as an integer, for your plugin
+    MAX_GPU_LIMIT = 0  # Override with the maximum number of GPUs, as an integer, for your plugin
 
     # Use this dictionary structure to provide key-value output descriptive information
     # that may be useful for the next downstream plugin. For example:
@@ -162,11 +163,11 @@ class Fshack(ChrisApp):
         #                     optional    = True,
         #                     default     = "")
         self.add_argument("-a", "--args",
-                            help        = "FS arguments to pass",
-                            type        = str,
-                            dest        = 'args',
-                            optional    = True,
-                            default     = "")
+                          help="FS arguments to pass",
+                          type=str,
+                          dest='args',
+                          optional=True,
+                          default="")
         self.add_argument("-e", "--exec",
                           help="FS app to run",
                           type=str,
@@ -197,34 +198,40 @@ class Fshack(ChrisApp):
         """
         Define the code to be run by this plugin app.
         """
+        global str_cmd
         print(Gstr_title)
         print('Version: %s' % self.get_version())
-        
+
         # get first file inside of the directory
         str_inputFile = self.get_first_file(options.inputdir)
 
-        # pudb.set_trace()
+        l_appargs = options.args.split('ARGS:')
+        if len(l_appargs) == 2:
+            str_args = l_appargs[1]
+        else:
+            str_args = l_appargs[0]
 
-
-        if options.exec == 'recon-all': # -all -notalairach -parallel -openmp %d
+        if options.exec == 'recon-all':  # -all -notalairach -parallel -openmp %d
             str_cmd = '/usr/local/freesurfer/bin/%s -i %s/%s -subjid %s/%s %s' % \
-                      (options.exec, options.inputdir, options.inputFile, \
-                       options.outputdir, options.outputFile, options.args)
-        if options.exec == 'mri_convert': # --split -zo
+                      (options.exec, options.inputdir, options.inputFile,
+                       options.outputdir, options.outputFile, str_args)
+
+        if options.exec == 'mri_convert':  # --split -zo
             str_cmd = '/usr/local/freesurfer/bin/%s %s/%s  %s/%s %s' % \
-                      (options.exec, options.inputdir, options.inputFile, \
-                       options.outputdir, options.outputFile, options.args)
-        if options.exec == 'mri_info': # --conformed --type
-            str_cmd = '/usr/local/freesurfer/bin/%s %s/%s %s > %s/%s' % \
-                      (options.exec, options.inputdir, options.inputFile, \
-                       options.args, options.outputdir, options.outputFile)
-        if options.exec == 'mris_info': # --ncols #nrows
-            str_cmd = '/usr/local/freesurfer/bin/%s %s/%s %s > %s/%s' % \
-                      (options.exec, options.inputdir, options.inputFile, \
-                       options.args, options.outputdir, options.outputFile)
+                      (options.exec, options.inputdir, options.inputFile,
+                       options.outputdir, options.outputFile, str_args)
 
+        if options.exec == 'mri_info':  # --conformed --type
+            str_cmd = '/usr/local/freesurfer/bin/%s %s/%s %s > %s/%s' % \
+                      (options.exec, options.inputdir, options.inputFile,
+                       str_args, options.outputdir, options.outputFile)
+
+        if options.exec == 'mris_info':  # --ncols #nrows
+            str_cmd = '/usr/local/freesurfer/bin/%s %s/%s %s > %s/%s' % \
+                      (options.exec, options.inputdir, options.inputFile,
+                       str_args, options.outputdir, options.outputFile)
+        # pudb.set_trace()
         os.system(str_cmd)
-
 
     def show_man_page(self):
         """

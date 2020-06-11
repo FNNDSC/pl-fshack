@@ -65,7 +65,9 @@ Arguments
 
     [-a|--args <argsPassedToExec>]
     Specifies all the arguments within quotes (''), that FreeSurfer's commands:
-    recon-all, mri_convert, mri_info, and mris_info accepts
+    recon-all, mri_convert, mri_info, and mris_info accepts.
+    Note: Pass the arguments as a string prefixed with 'ARGS: '
+    within single quotes 'ARGS:'
 
     [-h] [--help]
     If specified, show help message.
@@ -146,7 +148,7 @@ Copy and modify the different commands below as needed.
         -i SAG-anon.nii                                                     \\
         -o FShackOutput                                                     \\
         --exec recon-all                                                    \\
-        --args '-all -notalairach'                                          \\
+        --args 'ARGS: -all -notalairach'                                          \\
         /incoming /outgoing
 
 .. code:: bash
@@ -156,7 +158,7 @@ Copy and modify the different commands below as needed.
         -i SAG-anon.nii                                                     \\
         -o FShackOutput                                                     \\
         --exec mri_convert                                                  \\
-        --args '--split'                                                    \\
+        --args 'ARGS: --split'                                                    \\
         /incoming /outgoing
 
 The path must be an absolute path (in other words, just a specific path).
