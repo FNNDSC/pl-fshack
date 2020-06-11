@@ -25,8 +25,11 @@ Synopsis
 .. code::
 
     python fshack.py                                         \\
-	    -s|--subjectID                                      			\\
-            -a|--reconall                                               \\
+	    -s|--subjectID                                       	\\
+            -e|--exec                                                   \\
+            -a|--args                                                   \\
+            -i|--inputFile                                              \\
+            -o|--outputFile                                             \\
             [-h] [--help]                                               \\
             [--json]                                                    \\
             [--man]                                                     \\
@@ -55,8 +58,18 @@ Arguments
 	A directory *within* the <inputDir> that contains the images for
 	recon-all to process.
 
-    -a|--reconall
-    Speciies all the arguments that FreeSurfer's recon-all accepts
+    -e|--exec
+    Specifies the Freesurfer argument to execute.
+
+    -a|--args
+    Specifies all the arguments within quotes (''), that FreeSurfer's
+    recon-all, mri_convert, mri_info, and mris_info accepts
+
+    -i|--inputFile
+    Input file to convert. Typically a DICOM file or a nifti volume.
+
+    -o|--outputFile
+    Output file/directory name to store the output in.
 
     [-h] [--help]
     If specified, show help message.
@@ -74,7 +87,7 @@ Arguments
     If specified, save json representation file to DIR. 
         
     [--version]
-    If specified, print version number . 
+    If specified, print version number.
 
 
 Run
@@ -82,8 +95,12 @@ Run
 
 This ``plugin`` can be run as a containerized docker image.
 
-First we need to fetch sample DICOM images. Follow the steps below to fetch sample DICOM images.
+First, we need to fetch sample DICOM/NIfTI images.
 
+Pull DICOM
+^^^^^^^^^^
+
+- We provide a sample directory of ``.dcm`` images here. (https://github.com/FNNDSC/SAG-anon.git)
 
 - Clone this repository (SAG-anon) to your local computer.
 
@@ -92,6 +109,19 @@ First we need to fetch sample DICOM images. Follow the steps below to fetch samp
     git clone https://github.com/FNNDSC/SAG-anon.git
 
 - Make sure the ``SAG-anon`` directory is placed in the same directory as your ``pl-fshack`` directory.
+
+Pull NIFTI
+^^^^^^^^^^
+
+- We provide a sample directory of a ``.nii`` volume here. (https://github.com/FNNDSC/SAG-anon-nii.git)
+
+- Clone this repository (SAG-anon-nii) to your local computer.
+
+::
+
+    git clone https://github.com/FNNDSC/SAG-anon-nii.git
+
+- Make sure the ``SAG-anon-nii`` directory is placed in the same directory as your ``pl-fshack`` directory.
 
 Using ``docker run``
 ~~~~~~~~~~~~~~~~~~~~
@@ -108,20 +138,20 @@ To run using ``docker``, be sure to assign an "input" directory to ``/incoming``
 
     docker pull fnndsc/pl-fshack
 
+Examples
+--------
+
 Copy and modify the command below as needed.
 
 .. code:: bash
 
-    docker run -v /SAG-anon/:/incoming -v /results/:/outgoing   \\
+    docker run -v /SAG-anon-nii/:/incoming -v /results/:/outgoing   \\
         fnndsc/pl-fshack fshack.py                                          \\
-        --subjectID FShackOutput                                            \\
+        -i SAG-anon.nii                                                     \\
+        -o FShackOutput                                                     \\
+        --exec recon-all                                                    \\
+        --args '-all -notalairach'                                          \\
         /incoming /outgoing
 
 The path must be an absolute path (in other words, just a specific path).
 
-
-More Examples
--------------
-
-To specify "recon-all" arguments:
-    (In-Progress)
