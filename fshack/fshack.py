@@ -63,7 +63,6 @@ Gstr_synopsis = """
 
         <pathToInput> is the path to your input files
         <pathToOutput> is the path to where you want your output to go
-        <outputName> is the name of the output directory
 
         The path must be an absolute path (in other words, just a specific path).
 
