@@ -93,7 +93,9 @@ Run
 
 This ``plugin`` can be run as a containerized docker image.
 
-First, we need to fetch sample DICOM/NIfTI images.
+First, create a directory named ``devel`` under your ``/home/user/`` directory.
+
+Then, we need to fetch sample DICOM/NIfTI images.
 
 Pull DICOM
 ^^^^^^^^^^
@@ -106,7 +108,7 @@ Pull DICOM
 
     git clone https://github.com/FNNDSC/SAG-anon.git
 
-- Make sure the ``SAG-anon`` directory is placed in the same directory as your ``pl-fshack`` directory.
+- Make sure the ``SAG-anon`` directory is placed in the ``devel`` directory.
 
 Pull NIFTI
 ^^^^^^^^^^
@@ -119,16 +121,16 @@ Pull NIFTI
 
     git clone https://github.com/FNNDSC/SAG-anon-nii.git
 
-- Make sure the ``SAG-anon-nii`` directory is placed in the same directory as your ``pl-fshack`` directory.
+- Make sure the ``SAG-anon-nii`` directory is placed in the ``devel`` directory.
 
 Using ``docker run``
 ~~~~~~~~~~~~~~~~~~~~
 
 To run using ``docker``, be sure to assign an "input" directory to ``/incoming`` and an output directory to ``/outgoing``. *Make sure that the* ``/out`` *directory is world writable!*
 
-- Make sure your current working directory is the one which contains both ``SAG-anon`` and ``pl-fshack``.
+- Make sure your current working directory is ``devel``, the one which contains both ``SAG-anon`` and ``pl-fshack``.
 
-- Create an output directory named ``results`` in the current working directory.
+- Create an output directory named ``results`` in ``devel``.
 
 - Pull the ``fnndsc/pl-fshack`` image using the following command.
 
@@ -141,9 +143,11 @@ Examples
 
 Copy and modify the different commands below as needed.
 
+- ``recon-all``
+
 .. code:: bash
 
-    docker run -v /SAG-anon-nii/:/incoming -v /results/:/outgoing   \\
+    docker run -v /home/user/devel/SAG-anon-nii/:/incoming -v /home/user/devel/results/:/outgoing   \\
         fnndsc/pl-fshack fshack.py                                          \\
         -i SAG-anon.nii                                                     \\
         -o FShackOutput                                                     \\
@@ -151,14 +155,40 @@ Copy and modify the different commands below as needed.
         --args 'ARGS: -all -notalairach'                                          \\
         /incoming /outgoing
 
+- ``mri_convert``
+
 .. code:: bash
 
-    docker run -v /SAG-anon-nii/:/incoming -v /results/:/outgoing   \\
+    docker run -v /home/user/devel/SAG-anon/:/incoming -v /home/user/devel/results/:/outgoing   \\
         fnndsc/pl-fshack fshack.py                                          \\
-        -i SAG-anon.nii                                                     \\
-        -o FShackOutput                                                     \\
+        -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \\
+        -o FShackOutput.nii                                                 \\
         --exec mri_convert                                                  \\
-        --args 'ARGS: --split'                                                    \\
+        --args 'ARGS: --split'                                              \\
+        /incoming /outgoing
+
+- ``mri_info``
+
+.. code:: bash
+
+    docker run -v /home/user/devel/SAG-anon/:/incoming -v /home/user/devel/results/:/outgoing   \\
+        fnndsc/pl-fshack fshack.py                                          \\
+        -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \\
+        -o FShackOutput.txt                                                 \\
+        --exec mri_info                                                     \\
+        --args 'ARGS: --ncols'                                              \\
+        /incoming /outgoing
+
+- ``mris_info``
+
+.. code:: bash
+
+    docker run -v /home/user/devel/SAG-anon/:/incoming -v /home/user/devel/results/:/outgoing   \\
+        fnndsc/pl-fshack fshack.py                                          \\
+        -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \\
+        -o FShackOutput.txt                                                 \\
+        --exec mris_info                                                    \\
+        --args 'ARGS: --ncols'                                              \\
         /incoming /outgoing
 
 The path must be an absolute path (in other words, just a specific path).
