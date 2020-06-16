@@ -2,7 +2,7 @@
 #
 # fshack ds ChRIS plugin app
 #
-# (c) 2016-2019 Fetal-Neonatal Neuroimaging & Developmental Science Center
+# (c) 2016-2020 Fetal-Neonatal Neuroimaging & Developmental Science Center
 #                   Boston Children's Hospital
 #
 #              http://childrenshospital.org/FNNDSC/
@@ -58,7 +58,8 @@ Gstr_synopsis = """
         This program is meant to be run inside of the container. To run with
         Docker, copy this command and modify as needed:
 
-        docker run -v <pathToInput>:/incoming -v <pathToOutput>:/outgoing -ti fnndsc/pl-fshack fshack.py --subjectID <outputName> /incoming /outgoing
+        docker run -v <pathToInput>:/incoming -v <pathToOutput>:/outgoing 
+		fnndsc/pl-fshack fshack.py -i myInputFile -o myOutputFiles /incoming /outgoing
 
         <pathToInput> is the path to your input files
         <pathToOutput> is the path to where you want your output to go
@@ -71,21 +72,13 @@ Gstr_synopsis = """
 
         Example:
 
-        docker run -v /home/user/desktop:/incoming -v /home/user/desktop:/outgoing -ti fnndsc/pl-fshack fshack.py --subjectID myOutputFiles /incoming /outgoing
+        docker run -v /home/user/desktop:/incoming -v /home/user/desktop:/outgoing
+		fnndsc/pl-fshack fshack.py 
+		-i myInputFile -o myOutputFiles --exec recon-all /incoming /outgoing 
 
-        If you want to specify how many processors the plugin will use, 
-        add the -p flag (default is 1), then the number of processors.
-        It is recommended to allocate as much processors as you can
-        spare to speed up the plugin.
+    	ARGS
 
-
-        Example:
-
-        docker run -v /home/user/desktop:/incoming -v /home/user/desktop:/outgoing -ti fnndsc/pl-fshack fshack.py --subjectID myOutputFiles /incoming /outgoing -p 4
-
-    ARGS
-
-	    -i|--inputFile <inputFileWithinInputDir>
+	-i|--inputFile <inputFileWithinInputDir>
         Input file to convert present in inputDir. Typically a DICOM file or a nifti volume.
 
         -o|--outputFile <outputFileWithinOutputDir>
