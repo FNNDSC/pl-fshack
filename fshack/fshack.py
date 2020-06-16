@@ -38,18 +38,20 @@ Gstr_synopsis = """
 
     SYNOPSIS
 
-        python fshack.py                                                \\
-	    -s|--subjectID <subjectDirInsideInputDir>			        \\
-            -a|--reconall <ReconallArguments>                           \\
+        python fshack.py                                              \\
+            -i|--inputFile <inputFileWithinInputDir>                    \\
+            -o|--outputFile <outputFileWithinOutputDir>                 \\
+            [-e|--exec <commandToExec>]                                 \\
+            [-a|--args <argsPassedToExec> ]                             \\
             [-h] [--help]                                               \\
             [--json]                                                    \\
             [--man]                                                     \\
             [--meta]                                                    \\
             [--savejson <DIR>]                                          \\
-            [-v <level>] [--verbosity <level>]                          \\
+            [-v|--verbosity <level>]                                    \\
             [--version]                                                 \\
             <inputDir>                                                  \\
-            <outputDir> 
+            <outputDir>
 
     DESCRIPTION
 
@@ -83,32 +85,40 @@ Gstr_synopsis = """
 
     ARGS
 
-	    -s|--subjectID <subjectDirInsideInputDir>
-	    A directory *within* the <outputDir> that stores the output of the recon-all
+	    -i|--inputFile <inputFileWithinInputDir>
+        Input file to convert present in inputDir. Typically a DICOM file or a nifti volume.
 
-        -a|--reconall
-        Specifies the string arguments for recon-all that Freesurfer will use.
+        -o|--outputFile <outputFileWithinOutputDir>
+        Output file/directory name to store the output in within the outputDir.
+        Note: This argument is used in place of -s|--subjectID <subjID> of FreeSurfer
+
+        [-e|--exec <commandToExec>]
+        Specifies the Freesurfer command to execute.
+
+        [-a|--args <argsPassedToExec>]
+        Specifies all the arguments within quotes (''), that FreeSurfer's commands:
+        recon-all, mri_convert, mri_info, and mris_info accepts.
+        Note: Pass the arguments as a string prefixed with 'ARGS: '
+        within single quotes 'ARGS:'
 
         [-h] [--help]
-        If specified, show help message and exit.
-        
+        If specified, show help message.
+
         [--json]
-        If specified, show json representation of app and exit.
-        
+        If specified, show json representation of app.
+
         [--man]
-        If specified, print (this) man page and exit.
+        If specified, print (this) man page.
 
         [--meta]
-        If specified, print plugin meta data and exit.
-        
-        [--savejson <DIR>] 
-        If specified, save json representation file to DIR and exit. 
-        
-        [-v <level>] [--verbosity <level>]
-        Verbosity level for app. Not used currently.
-        
+        If specified, print plugin meta data.
+
+        [--savejson <DIR>]
+        If specified, save json representation file to DIR.
+
         [--version]
-        If specified, print version number and exit. 
+        If specified, print version number.
+
 
 """
 
