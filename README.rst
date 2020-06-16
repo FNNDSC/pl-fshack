@@ -181,7 +181,7 @@ Copy and modify the different commands below as needed.
 
 - ``mris_info``
 
-To run mris_info we need a typical FreeSurfer curvature file. 
+To run ``mris_info`` we need a typical FreeSurfer curvature file. 
 
 Luckily such typical files exist in the output directory of another ChRIS plugin called ``pl-freesurfer_pp``
 Let's run that plugin to generate its output tree and then run ``mris_info`` on one of those outputs. 
