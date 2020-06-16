@@ -152,7 +152,7 @@ Copy and modify the different commands below as needed.
         -i SAG-anon.nii                                                     \\
         -o FShackOutput                                                     \\
         --exec recon-all                                                    \\
-        --args 'ARGS: -all -notalairach'                                          \\
+        --args 'ARGS: -all -notalairach'                                    \\
         /incoming /outgoing
 
 - ``mri_convert``
@@ -181,11 +181,28 @@ Copy and modify the different commands below as needed.
 
 - ``mris_info``
 
+To run mris_info we need a typical FreeSurfer curvature file. 
+
+Luckily such typical files exist in the output directory of another ChRIS plugin called ``pl-freesurfer_pp``
+Let's run that plugin to generate its output tree and then run ``mris_info`` on one of those outputs. 
+Here's how you do it:
+
 .. code:: bash
 
-    docker run -v /home/user/devel/SAG-anon/:/incoming -v /home/user/devel/results/:/outgoing   \\
+    docker run --rm -v $(pwd)/:/incoming -v /home/user/devel/pl-fshack/:/outgoing  \\
+        fnndsc/pl-freesurfer_pp freesurfer_pp.py       \\
+        -c surf                                        \\
+        -- /incoming /outgoing
+
+The output of the above command is stored in a directory call ``out`` in the ``pl-fshack`` directory.
+
+A sample curvature file named ``rh.smoothwm`` from the ``out`` directory is passed as the inputFile to the docker command below. 
+
+.. code:: bash
+
+    docker run -v /home/user/devel/pl-fshack/:/incoming -v /home/user/devel/results/:/outgoing   \\
         fnndsc/pl-fshack fshack.py                                          \\
-        -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \\
+        -i rh.smoothwm                                                      \\
         -o FShackOutput.txt                                                 \\
         --exec mris_info                                                    \\
         --args 'ARGS: --ncols'                                              \\
