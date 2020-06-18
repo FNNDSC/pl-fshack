@@ -187,7 +187,7 @@ For ``NifTI`` inputs:
 
 .. code:: bash
 
-    docker run                                                              \
+    docker run --rm                                                         \
         -v ${DEVEL}/SAG-anon-nii/:/incoming -v ${DEVEL}/results/:/outgoing  \
         fnndsc/pl-fshack fshack.py                                          \
         -i SAG-anon.nii                                                     \
@@ -200,7 +200,7 @@ For ``NifTI`` inputs:
 
 .. code:: bash
 
-    docker run                                                              \
+    docker run --rm                                                         \
         -v ${DEVEL}/SAG-anon-nii/:/incoming -v ${DEVEL}/results/:/outgoing  \
         fnndsc/pl-fshack fshack.py                                          \
         -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
@@ -216,7 +216,7 @@ NOTE: The ``recon-all`` commands will take multiple hours to run to completion!
 
 .. code:: bash
 
-    docker run                                                              \
+    docker run --rm                                                         \
         -v ${DEVEL}/SAG-anon/:/incoming -v ${DEVEL}/results/:/outgoing      \
         fnndsc/pl-fshack fshack.py                                          \
         -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
@@ -232,7 +232,7 @@ The results of the below information query are stored in a text file ``${DEVEL}/
 
 .. code:: bash
 
-    docker run                                                              \
+    docker run --rm                                                         \
         -v ${DEVEL}/SAG-anon/:/incoming -v ${DEVEL}/results/:/outgoing      \
         fnndsc/pl-fshack fshack.py                                          \
         -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
@@ -271,5 +271,4 @@ The output of the above command is a directory called ``surf`` that should be lo
         --args 'ARGS: --ncols'                                              \
         /incoming /outgoing
 
-The path must be an absolute path (in other words, just a specific path).
-
+*_30_*
