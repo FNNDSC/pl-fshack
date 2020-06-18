@@ -23,7 +23,7 @@ This ChRIS ``DS`` plugin contains a complete FreeSurfer (https://surfer.nmr.mgh.
 * ``mri_info``
 * ``mris_info``
 
-This plugin is meant to demonstrate some design patterns as well as providing some utility for running FreeSurfer within the context of ChRIS. It is not meant or intended to be a canonical FreeSurfer ChRIS plugin -- as explicitly indicated by the name, FreeSurfer "hack", ``fshack``. Colloquially, however, this plugin is also known as ``f-shack``.
+This plugin is meant to demonstrate some design patterns as well as providing some utility for running FreeSurfer within the context of ChRIS. It is not meant nor intended to be a canonical FreeSurfer ChRIS plugin -- as explicitly indicated by the name, FreeSurfer "hack", ``fshack``. Colloquially, however, this plugin is also known as ``f-shack``.
 
 Thus, while some additional internal FreeSurfer apps might be exposed at the level of the plugin entry point, the intention with this plugin is *not* to necessarily expose *all* FreeSurfer applications. Arguably, more specific and more lightweight containers and/or ChRIS plugins might be more suitable for such pervasive fine-grained coverage.
 
