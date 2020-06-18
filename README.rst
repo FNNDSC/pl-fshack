@@ -173,7 +173,7 @@ To run using ``docker``, be sure to assign an "input" directory to ``/incoming``
 
 - Pull the ``fnndsc/pl-fshack`` image using the following command.
 
-:: code::
+.. code::
 
     docker pull fnndsc/pl-fshack
 
