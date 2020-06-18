@@ -224,7 +224,6 @@ NOTE: The ``recon-all`` commands will take multiple hours to run to completion!
         -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
         -o DCM2NII.nii                                                      \
         --exec mri_convert                                                  \
-        --args 'ARGS: --split'                                              \
         /incoming /outgoing
 
 ``mri_info``
@@ -240,7 +239,6 @@ The results of the below information query are stored in a text file ``${DEVEL}/
         -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
         -o info.txt                                                         \
         --exec mri_info                                                     \
-        --args 'ARGS: --ncols'                                              \
         /incoming /outgoing
 
 ``mris_info``
@@ -270,7 +268,6 @@ The output of the above command is a directory called ``surf`` that should be lo
         -i rh.smoothwm                                                      \
         -o mris_info.txt                                                    \
         --exec mris_info                                                    \
-        --args 'ARGS: --ncols'                                              \
         /incoming /outgoing
 
 *-30-*
