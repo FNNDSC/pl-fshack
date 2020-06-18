@@ -196,7 +196,7 @@ For ``NifTI`` inputs:
         --args 'ARGS: -all -notalairach'                                    \
         /incoming /outgoing
         
- - for ``DICOM`` inputs:
+For ``DICOM`` inputs:
 
 .. code:: bash
 
