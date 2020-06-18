@@ -167,7 +167,7 @@ To run using ``docker``, be sure to assign an "input" directory to ``/incoming``
 
 .. code::
 
-   mkdir results
+   mkdir results && chmod 777 results
 
 - Pull the ``fnndsc/pl-fshack`` image using the following command.
 
