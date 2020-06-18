@@ -180,58 +180,69 @@ Examples
 
 Copy and modify the different commands below as needed.
 
-- ``recon-all``
- - For ``NitFTI`` inputs:
+``recon-all``
+^^^^^^^^^^^^^
+
+For ``NifTI`` inputs:
 
 .. code:: bash
 
-    docker run -v ${DEVEL}/SAG-anon-nii/:/incoming -v ${DEVEL}/results/:/outgoing   \\
-        fnndsc/pl-fshack fshack.py                                          \\
-        -i SAG-anon.nii                                                     \\
-        -o recon-of-SAG-anon-nii                                            \\
-        --exec recon-all                                                    \\
-        --args 'ARGS: -all -notalairach'                                    \\
+    docker run                                                              \
+        -v ${DEVEL}/SAG-anon-nii/:/incoming -v ${DEVEL}/results/:/outgoing  \
+        fnndsc/pl-fshack fshack.py                                          \
+        -i SAG-anon.nii                                                     \
+        -o recon-of-SAG-anon-nii                                            \
+        --exec recon-all                                                    \
+        --args 'ARGS: -all -notalairach'                                    \
         /incoming /outgoing
         
  - for ``DICOM`` inputs:
 
 .. code:: bash
 
-    docker run -v ${DEVEL}/SAG-anon-nii/:/incoming -v ${DEVEL}/results/:/outgoing   \\
-        fnndsc/pl-fshack fshack.py                                          \\
-        -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \\
-        -o recon-of-SAG-anon-dcm                                            \\
-        --exec recon-all                                                    \\
-        --args 'ARGS: -all -notalairach'                                    \\
+    docker run                                                              \
+        -v ${DEVEL}/SAG-anon-nii/:/incoming -v ${DEVEL}/results/:/outgoing  \
+        fnndsc/pl-fshack fshack.py                                          \
+        -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
+        -o recon-of-SAG-anon-dcm                                            \
+        --exec recon-all                                                    \
+        --args 'ARGS: -all -notalairach'                                    \
         /incoming /outgoing
 
 NOTE: The ``recon-all`` commands will take multiple hours to run to completion!
 
-- ``mri_convert``
+``mri_convert``
+^^^^^^^^^^^^^^
 
 .. code:: bash
 
-    docker run -v ${DEVEL}/SAG-anon/:/incoming -v ${DEVEL}/results/:/outgoing   \\
-        fnndsc/pl-fshack fshack.py                                          \\
-        -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \\
-        -o DCM2NII.nii                                                      \\
-        --exec mri_convert                                                  \\
-        --args 'ARGS: --split'                                              \\
+    docker run                                                              \
+        -v ${DEVEL}/SAG-anon/:/incoming -v ${DEVEL}/results/:/outgoing      \
+        fnndsc/pl-fshack fshack.py                                          \
+        -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
+        -o DCM2NII.nii                                                      \
+        --exec mri_convert                                                  \
+        --args 'ARGS: --split'                                              \
         /incoming /outgoing
 
-- ``mri_info``
+``mri_info``
+^^^^^^^^^^^^
+
+The results of the below information query are stored in a text file ``${DEVEL}/results/info.txt``
 
 .. code:: bash
 
-    docker run -v ${DEVEL}/SAG-anon/:/incoming -v ${DEVEL}/results/:/outgoing   \\
-        fnndsc/pl-fshack fshack.py                                          \\
-        -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \\
-        -o info.txt                                                         \\
-        --exec mri_info                                                     \\
-        --args 'ARGS: --ncols'                                              \\
+    docker run                                                              \
+        -v ${DEVEL}/SAG-anon/:/incoming -v ${DEVEL}/results/:/outgoing      \
+        fnndsc/pl-fshack fshack.py                                          \
+        -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
+        -o info.txt                                                         \
+        --exec mri_info                                                     \
+        --args 'ARGS: --ncols'                                              \
         /incoming /outgoing
 
-- ``mris_info``
+``mris_info``
+^^^^^^^^^^^^
 
 To run ``mris_info`` we need a typical FreeSurfer curvature file. 
 
@@ -241,21 +252,23 @@ Here's how you do it:
 
 .. code:: bash
 
-    docker run --rm -v $(pwd)/:/incoming -v ${DEVEL}/results:/outgoing  \\
-        fnndsc/pl-freesurfer_pp freesurfer_pp.py                        \\
-        -c surf                                                         \\
+    docker run --rm                                                     \
+        -v $(pwd)/:/incoming -v ${DEVEL}/results:/outgoing              \
+        fnndsc/pl-freesurfer_pp freesurfer_pp.py                        \
+        -c surf                                                         \
         -- /incoming /outgoing
 
 The output of the above command is a directory called ``surf`` that should be located in the ``results`` directory. A sample curvature file named ``rh.smoothwm`` from the ``results/surf`` directory is passed as the inputFile to the docker command below. 
 
 .. code:: bash
 
-    docker run -v ${DEVEL}/results/surf:/incoming -v ${DEVEL}/results/:/outgoing   \\
-        fnndsc/pl-fshack fshack.py                                          \\
-        -i rh.smoothwm                                                      \\
-        -o mris_info.txt                                                    \\
-        --exec mris_info                                                    \\
-        --args 'ARGS: --ncols'                                              \\
+    docker run --rm                                                         \
+        -v ${DEVEL}/results/surf:/incoming -v ${DEVEL}/results/:/outgoing   \
+        fnndsc/pl-fshack fshack.py                                          \
+        -i rh.smoothwm                                                      \
+        -o mris_info.txt                                                    \
+        --exec mris_info                                                    \
+        --args 'ARGS: --ncols'                                              \
         /incoming /outgoing
 
 The path must be an absolute path (in other words, just a specific path).
