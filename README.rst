@@ -1,4 +1,4 @@
-pl-fshack
+``pl-fshack``
 ================================
 
 .. image:: https://badge.fury.io/py/fshack.svg
