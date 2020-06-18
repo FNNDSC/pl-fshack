@@ -36,8 +36,8 @@ The design pattern of this plugin is to allow a user to run some internal FreeSu
 .. code::
 
     --exec "recon-all" --args 'ARGS: -all -notalairach'
-    
-for example.
+
+Note that is an underlying FreeSurfer application does not additional arguments beyond the input and/or output specifications, the ``--args ...`` can be safely omitted.
 
 Synopsis
 --------
@@ -89,6 +89,8 @@ Arguments
     Note that only a few of the FreeSurfer apps are currently exposed!
 
     [-a|--args <argsPassedToExec>]
+    Optional string of additional arguments to "pass through" to the FreeSurfer app.
+    
     The design pattern of this plugin is to provide all the CLI args for a single app
     specificed `-exec` somewhat blindly. To this end, all the args for a given internal
     FreeSurfer app are themselves specified at the plugin level with this flag. These
