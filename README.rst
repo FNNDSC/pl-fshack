@@ -37,7 +37,7 @@ The design pattern of this plugin is to allow a user to run some internal FreeSu
 
     --exec "recon-all" --args 'ARGS: -all -notalairach'
 
-Note that is an underlying FreeSurfer application does not additional arguments beyond the input and/or output specifications, the ``--args ...`` can be safely omitted.
+Note that if an underlying FreeSurfer application does not need additional arguments beyond the input and/or output specifications, the ``--args ...`` can be safely omitted.
 
 Synopsis
 --------
