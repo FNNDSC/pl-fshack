@@ -16,7 +16,7 @@ pl-fshack
 Abstract
 --------
 
-This ChRIS ``DS`` plugin contains a complete FreeSurfer (version 7) distribution. Not all FreeSurfer internal applications are exposed at the plugin level, however. At time of writing, the following FreeSurfer applications are exposed:
+This ChRIS ``DS`` plugin contains a complete FreeSurfer (https://surfer.nmr.mgh.harvard.edu/fswiki/rel7downloadsversion) distribution. Not all FreeSurfer internal applications are exposed at the plugin level, however. At time of writing, the following FreeSurfer applications are exposed:
 
 * ``recon-all``
 * ``mri_convert``
