@@ -246,12 +246,12 @@ The results of the below information query are stored in a text file ``${DEVEL}/
 
 To run ``mris_info`` we need a typical FreeSurfer curvature file. 
 
-Luckily such typical files exist in the output directory of another ChRIS plugin called ``pl-freesurfer_pp``
-Let's run that plugin to generate its output tree and then run ``mris_info`` on one of those outputs. 
-Here's how you do it:
+Luckily such typical files exist in the output directory of another ChRIS plugin called ``pl-freesurfer_pp``. Despite the name, the ``pl-freesurfer_pp`` is *NOT* a FreeSurfer container, but merely a simluated one that contains a pre-processed (hence the ``_pp``) set of data generated from a FreeSurfer run.
+
+Let's run that plugin to generate its output tree and then run ``mris_info`` on one of those outputs. Here's how you do it:
 
 .. code:: bash
-
+    docker pull fnndsc/pl-freesurfer_pp
     docker run --rm                                                     \
         -v $(pwd)/:/incoming -v ${DEVEL}/results:/outgoing              \
         fnndsc/pl-freesurfer_pp freesurfer_pp.py                        \
