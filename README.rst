@@ -271,4 +271,4 @@ The output of the above command is a directory called ``surf`` that should be lo
         --args 'ARGS: --ncols'                                              \
         /incoming /outgoing
 
-*_-30-_*
+*-30-*
