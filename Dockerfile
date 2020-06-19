@@ -8,9 +8,10 @@
 #
 #   docker build -t local/pl-fshack .
 #
-# In the case of a proxy (located at 192.168.13.14:3128), do:
+# In the case of a proxy (located at say 10.41.13.4:3128), do:
 #
-#    docker build --build-arg http_proxy=http://192.168.13.14:3128 --build-arg UID=$UID -t local/pl-fshack .
+#    export PROXY="http://10.41.13.4:3128"
+#    docker build --build-arg http_proxy=${PROXY} --build-arg UID=$UID -t local/pl-fshack .
 #
 # To run an interactive shell inside this container, do:
 #
@@ -25,7 +26,7 @@
 
 FROM fnndsc/ubuntu-python3:latest
 # FROM fnndsc/centos-python3:latest
-MAINTAINER fnndsc "dev@babymri.org"
+LABEL maintainer="dev@babymri.org"
 
 ENV APPROOT="/usr/src/fshack"
 ENV DEBIAN_FRONTEND=noninteractive VERSION="0.1"
@@ -35,7 +36,7 @@ COPY ["license.txt", "${APPROOT}"]
 
 WORKDIR $APPROOT
 
-# Now add the explicit commands to pull, unpack and "install" 
+# Now add the explicit commands to pull, unpack and "install"
 # FreeSurfer using "RUN ..."
 # For ubuntu... apt install ...
 RUN apt update && \
