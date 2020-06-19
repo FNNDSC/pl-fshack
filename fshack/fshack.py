@@ -204,10 +204,10 @@ class Fshack(ChrisApp):
 
     def job_run(self, str_cmd):
         """
-        Running CLI process via python is cumbersome. The typical/easy path
-        of
+        Running some CLI process via python is cumbersome. The typical/easy 
+        path of
 
-                os.system(str_cmd)
+                            os.system(str_cmd)
 
         is deprecated and prone to hidden complexity. The preferred
         method is via subprocess, which has a cumbersome processing
