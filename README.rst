@@ -1,4 +1,4 @@
-pl-fshack
+``pl-fshack``
 ================================
 
 .. image:: https://badge.fury.io/py/fshack.svg
@@ -269,5 +269,28 @@ The output of the above command is a directory called ``surf`` that should be lo
         -o mris_info.txt                                                    \
         --exec mris_info                                                    \
         /incoming /outgoing
+        
+Debug
+-----
+
+Finally, let's conclude with some quick notes on debugging this plugin. The debugging process is predicated on the idea of mapping a source code directory into an already existing container, thus "shadowing" or "masking" the existing code and overlaying current work directly within the container.
+
+In this manner, one can debug the plugin without needing to continually rebuild the docker image (which in the case of this FreeSurfer image can take upwards of 15 minutes).
+
+So, assuming the same env variables as above, and assuming that you are in the source repo base directory of the plugin code:
+
+.. code:: bash
+
+    docker run --rm -ti                                                         \
+               -v $(pwd)/fshack:/usr/src/fshack                                 \
+               -v ${DEVEL}/SAG-anon/:/incoming                                  \
+               -v ${DEVEL}/results/:/outgoing                                   \
+               fnndsc/pl-fshack fshack.py                                       \
+               -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm \       
+               -o info                                                          \
+               --exec mri_info                                                  \
+               /incoming /outgoing
+
+Obviously, adapt the above as needed.
 
 *-30-*
