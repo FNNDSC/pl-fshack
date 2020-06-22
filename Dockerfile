@@ -43,18 +43,29 @@ RUN apt update && \
     pip install --upgrade pip && \
     pip install -r requirements.txt
 
+# If you are going to build a bunch of local test versions of this container,
+# best to first copy the freesurfer distro locally and then just copy into the
+# container. Comment out toggle the following line and the `wget line` in the
+# RUN appropriately.
+# COPY freesurfer-linux-centos8_x86_64-7.1.0.tar.gz $APPROOT
+COPY nvidia/nvidia-download.sh ${APPROOT}
+
 RUN apt install -y wget && \
     wget https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.1.0/freesurfer-linux-centos8_x86_64-7.1.0.tar.gz && \
     tar -C /usr/local -xzvf freesurfer-linux-centos8_x86_64-7.1.0.tar.gz && \
-    rm -rf freesurfer-linux-centos8_x86_64-7.1.0.tar.gz && \
-    apt-get -y install bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libjpeg62-dev && \
-    mv license.txt /usr/local/freesurfer  \
-    && apt-get install -y locales                                  \
-    && export LANGUAGE=en_US.UTF-8                                 \
-    && export LANG=en_US.UTF-8                                     \
-    && export LC_ALL=en_US.UTF-8                                   \
-    && locale-gen en_US.UTF-8                                      \
-    && dpkg-reconfigure locales
+    rm -rf freesurfer-linux-centos8_x86_64-7.1.0.tar.gz &&                  \
+    apt-get -y install most bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libjpeg62-dev && \
+    mv license.txt /usr/local/freesurfer                                    \
+    #&& apt get install libgl1-mesa-glx libglu1 libxmu6 libglib2.0-0 anki    \
+    && apt-get install -y libglu1 mesa-utils x11-apps xterm libxmu6 libglib2.0-0 anki  wget \
+    && apt-get install -y locales                                           \
+    && export LANGUAGE=en_US.UTF-8                                          \
+    && export LANG=en_US.UTF-8                                              \
+    && export LC_ALL=en_US.UTF-8                                            \
+    && locale-gen en_US.UTF-8                                               \
+    && dpkg-reconfigure locales                                             \
+    && ./nvidia-download.sh                                                 \
+    && sh NVIDIA-Linux-x86_64-440.64.run -a -N -s --no-kernel-module
 
 ENV PATH="/usr/local/freesurfer/bin:/usr/local/freesurfer/fsfast/bin:/usr/local/freesurfer/tktools:/usr/local/freesurfer/mni/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:" \
     FREESURFER_HOME="/usr/local/freesurfer" \
