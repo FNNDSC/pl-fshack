@@ -46,19 +46,19 @@ Synopsis
 
 .. code::
 
-    python fshack.py                                                    \\
-            -i|--inputFile <inputFileWithinInputDir>                    \\
-            -o|--outputFile <outputFileWithinOutputDir>                 \\
-            [-e|--exec <commandToExec>]                                 \\
-            [-a|--args <argsPassedToExec> ]                             \\
-            [-h] [--help]                                               \\
-            [--json]                                                    \\
-            [--man]                                                     \\
-            [--meta]                                                    \\
-            [--savejson <DIR>]                                          \\
-            [-v|--verbosity <level>]                                    \\
-            [--version]                                                 \\
-            <inputDir>                                                  \\
+    python fshack.py                                                    \
+            -i|--inputFile <inputFileWithinInputDir>                    \
+            -o|--outputFile <outputFileWithinOutputDir>                 \
+            [-e|--exec <commandToExec>]                                 \
+            [-a|--args <argsPassedToExec> ]                             \
+            [-h] [--help]                                               \
+            [--json]                                                    \
+            [--man]                                                     \
+            [--meta]                                                    \
+            [--savejson <DIR>]                                          \
+            [-v|--verbosity <level>]                                    \
+            [--version]                                                 \
+            <inputDir>                                                  \
             <outputDir> 
 
 Description
