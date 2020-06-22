@@ -231,7 +231,14 @@ NOTE: The ``recon-all`` commands will take multiple hours to run to completion!
 ``mri_info``
 ^^^^^^^^^^^^
 
-The results of the below information query are stored in a text file ``${DEVEL}/results/info.txt``
+The results of the below information query are stored in text files
+
+.. code:: bash 
+  
+    /outgoing/info-stdout
+    /outgoing/info-stderr
+    /outgoing/info-returncode
+    
 
 .. code:: bash
 
@@ -239,7 +246,7 @@ The results of the below information query are stored in a text file ``${DEVEL}/
         -v ${DEVEL}/SAG-anon/:/incoming -v ${DEVEL}/results/:/outgoing      \
         fnndsc/pl-fshack fshack.py                                          \
         -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
-        -o info.txt                                                         \
+        -o info                                                             \
         --exec mri_info                                                     \
         /incoming /outgoing
 
