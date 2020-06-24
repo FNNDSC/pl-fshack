@@ -30,32 +30,22 @@ LABEL maintainer="dev@babymri.org"
 
 ENV APPROOT="/usr/src/fshack"
 ENV DEBIAN_FRONTEND=noninteractive VERSION="0.1"
-COPY ["fshack", "${APPROOT}"]
-COPY ["requirements.txt", "${APPROOT}"]
-COPY ["license.txt", "${APPROOT}"]
+COPY ["fshack/", "requirements.txt", "license.txt", "${APPROOT}/"]
 
 WORKDIR $APPROOT
 
-# Now add the explicit commands to pull, unpack and "install"
-# FreeSurfer using "RUN ..."
-# For ubuntu... apt install ...
-RUN apt update && \
-    pip install --upgrade pip && \
-    pip install -r requirements.txt
-
-
-ADD https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.1.0/freesurfer-linux-centos8_x86_64-7.1.0.tar.gz $APPROOT/freesurfer.tar.gz
-
-RUN tar -C /usr/local -xzf $APPROOT/freesurfer.tar.gz && \
-    rm -rf $APPROOT/freesurfer.tar.gz && \
-    apt-get -qq install bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libjpeg62-dev \
-    libglu1-mesa libxmu6 libglib2.0-0 qt5-default \
+RUN pip install -r requirements.txt \
+    && apt-get update -q &&         \
+    apt-get -qq install bc binutils libgomp1 perl psmisc curl tar tcsh uuid-dev vim-common libjpeg62-dev \
+    libglu1-mesa libxmu6 libglib2.0-0 qt5-default && \
+    curl https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.1.0/freesurfer-linux-centos8_x86_64-7.1.0.tar.gz | \
+    tar -C /usr/local -xz                    \
     && mv license.txt /usr/local/freesurfer  \
-    && apt-get install -y locales                                  \
-    && export LANGUAGE=en_US.UTF-8                                 \
-    && export LANG=en_US.UTF-8                                     \
-    && export LC_ALL=en_US.UTF-8                                   \
-    && locale-gen en_US.UTF-8                                      \
+    && apt-get install -y locales            \
+    && export LANGUAGE=en_US.UTF-8           \
+    && export LANG=en_US.UTF-8               \
+    && export LC_ALL=en_US.UTF-8             \
+    && locale-gen en_US.UTF-8                \
     && dpkg-reconfigure locales
 
 ENV PATH="/usr/local/freesurfer/bin:/usr/local/freesurfer/fsfast/bin:/usr/local/freesurfer/tktools:/usr/local/freesurfer/mni/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:" \
