@@ -27,7 +27,9 @@ This plugin is meant to demonstrate some design patterns as well as providing so
 
 Thus, while some additional internal FreeSurfer apps might be exposed at the level of the plugin entry point, the intention with this plugin is *not* to necessarily expose *all* FreeSurfer applications. Arguably, more specific and more lightweight containers and/or ChRIS plugins might be more suitable for such pervasive fine-grained coverage.
 
-From a design perspective, the main complexity in exposing some random internal FreeSurfer application lies in the plugin requirement to have explicit positional arguments for ``<inputdir>`` and ``<outputdir>``. Since such directory components are for the most part not explicitly used at the CLI level by FreeSurfer apps, the exposure/mapping problem becomes one of correctly constructing the CLI pattern for a given FreeSurfer application to be explicitly aware of these requirements.
+Alternatively, ``pl-fshack`` does provide a full containerized FreeSurfer distribution, so the plugin could be run with an ``--entrypoint /bin/bash`` to gain access to all the underlying FreeSurfer apps (this however would not the use case in the ChRIS system -- in ChRIS only apps exposed by the plugin interface can be used).
+
+From a design perspective, the main plugin programming problem revolved around exposing some random internal FreeSurfer application with the plugin requirement of needing explicit positional arguments for ``<inputdir>`` and ``<outputdir>``. Since such directory components are for the most part not explicitly used at the CLI level by FreeSurfer apps, the exposure/mapping problem becomes one of correctly constructing the CLI pattern for a given FreeSurfer application to be explicitly aware of these requirements.
 
 Also, the concept of a ChRIS plugin is built on the assumption of no user interactivity. Thus, GUI applications of FreeSurfer are not exposed nor intended to be (but could in theory still be run from the container in a more "manual" fashion). Other FreeSurfer applications that typically provide information at a TTY level, such as ``mri_info`` that just dumps output to "screen" have that same output here explicitly saved to an output text file, specified while calling the plugin appropriately.
 
@@ -44,19 +46,19 @@ Synopsis
 
 .. code::
 
-    python fshack.py                                                    \\
-            -i|--inputFile <inputFileWithinInputDir>                    \\
-            -o|--outputFile <outputFileWithinOutputDir>                 \\
-            [-e|--exec <commandToExec>]                                 \\
-            [-a|--args <argsPassedToExec> ]                             \\
-            [-h] [--help]                                               \\
-            [--json]                                                    \\
-            [--man]                                                     \\
-            [--meta]                                                    \\
-            [--savejson <DIR>]                                          \\
-            [-v|--verbosity <level>]                                    \\
-            [--version]                                                 \\
-            <inputDir>                                                  \\
+    python fshack.py                                                    \
+            -i|--inputFile <inputFileWithinInputDir>                    \
+            -o|--outputFile <outputFileWithinOutputDir>                 \
+            [-e|--exec <commandToExec>]                                 \
+            [-a|--args <argsPassedToExec> ]                             \
+            [-h] [--help]                                               \
+            [--json]                                                    \
+            [--man]                                                     \
+            [--meta]                                                    \
+            [--savejson <DIR>]                                          \
+            [-v|--verbosity <level>]                                    \
+            [--version]                                                 \
+            <inputDir>                                                  \
             <outputDir> 
 
 Description
@@ -229,7 +231,14 @@ NOTE: The ``recon-all`` commands will take multiple hours to run to completion!
 ``mri_info``
 ^^^^^^^^^^^^
 
-The results of the below information query are stored in a text file ``${DEVEL}/results/info.txt``
+The results of the below information query are stored in text files
+
+.. code:: bash 
+  
+    /outgoing/info-stdout
+    /outgoing/info-stderr
+    /outgoing/info-returncode
+    
 
 .. code:: bash
 
@@ -237,7 +246,7 @@ The results of the below information query are stored in a text file ``${DEVEL}/
         -v ${DEVEL}/SAG-anon/:/incoming -v ${DEVEL}/results/:/outgoing      \
         fnndsc/pl-fshack fshack.py                                          \
         -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
-        -o info.txt                                                         \
+        -o info                                                             \
         --exec mri_info                                                     \
         /incoming /outgoing
 
@@ -251,6 +260,7 @@ Luckily such typical files exist in the output directory of another ChRIS plugin
 Let's run that plugin to generate its output tree and then run ``mris_info`` on one of those outputs. Here's how you do it:
 
 .. code:: bash
+
     docker pull fnndsc/pl-freesurfer_pp
     docker run --rm                                                     \
         -v $(pwd)/:/incoming -v ${DEVEL}/results:/outgoing              \
