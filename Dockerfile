@@ -43,12 +43,14 @@ RUN apt update && \
     pip install --upgrade pip && \
     pip install -r requirements.txt
 
-RUN apt install -y wget && \
-    wget https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.1.0/freesurfer-linux-centos8_x86_64-7.1.0.tar.gz && \
-    tar -C /usr/local -xzvf freesurfer-linux-centos8_x86_64-7.1.0.tar.gz && \
-    rm -rf freesurfer-linux-centos8_x86_64-7.1.0.tar.gz && \
-    apt-get -y install bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libjpeg62-dev && \
-    mv license.txt /usr/local/freesurfer  \
+
+ADD https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.1.0/freesurfer-linux-centos8_x86_64-7.1.0.tar.gz $APPROOT/freesurfer.tar.gz
+
+RUN tar -C /usr/local -xzf $APPROOT/freesurfer.tar.gz && \
+    rm -rf $APPROOT/freesurfer.tar.gz && \
+    apt-get -qq install bc binutils libgomp1 perl psmisc sudo tar tcsh unzip uuid-dev vim-common libjpeg62-dev \
+    libglu1-mesa libxmu6 libglib2.0-0 qt5-default \
+    && mv license.txt /usr/local/freesurfer  \
     && apt-get install -y locales                                  \
     && export LANGUAGE=en_US.UTF-8                                 \
     && export LANG=en_US.UTF-8                                     \
