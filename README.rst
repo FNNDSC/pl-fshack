@@ -16,7 +16,7 @@
 Abstract
 --------
 
-This ChRIS ``DS`` plugin contains a complete FreeSurfer (https://surfer.nmr.mgh.harvard.edu/fswiki/rel7downloadsversion) distribution. Not all FreeSurfer internal applications are exposed at the plugin level, however. At time of writing, the following FreeSurfer applications are exposed:
+This ChRIS ``DS`` plugin contains a complete FreeSurfer (https://surfer.nmr.mgh.harvard.edu/fswiki/rel7downloads) distribution. Not all FreeSurfer internal applications are exposed at the plugin level, however. At time of writing, the following FreeSurfer applications are exposed:
 
 * ``recon-all``
 * ``mri_convert``
