@@ -148,7 +148,7 @@ class Fshack(ChrisApp):
     CATEGORY                = ''
     TYPE                    = 'ds'
     DOCUMENTATION           = 'https://github.com/FNNDSC/pl-fshack'
-    VERSION                 = '1.1.2'
+    VERSION                 = '1.1.4'
     ICON                    = ''  # url of an icon image
     LICENSE                 = 'Opensource (MIT)'
     MAX_NUMBER_OF_WORKERS   = 1  # Override with integer value
@@ -225,11 +225,14 @@ class Fshack(ChrisApp):
             'returncode':   0
         }
 
+        localEnv    = os.environ.copy()
+        localEnv["SUBJECTS_DIR"] = self.options.outputdir
         p = subprocess.Popen(
                     str_cmd.split(),
                     stdout      = subprocess.PIPE,
                     stderr      = subprocess.PIPE,
-        )
+                    env         = localEnv
+                    )
 
         # Realtime output on stdout
         str_stdoutLine  = ""
@@ -269,6 +272,9 @@ class Fshack(ChrisApp):
         global str_cmd
         print(Gstr_title)
         print('Version: %s' % self.get_version())
+        for k,v in options.__dict__.items():
+            print("%20s:  -->%s<--" % (k, v))
+        self.options    = options
 
         str_args    = ""
         l_appargs   = options.args.split('ARGS:')
