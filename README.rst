@@ -206,7 +206,7 @@ Examples
 Copy and modify the different commands below as needed.
 
 ``recon-all``
-^^^^^^^^^^^^^
+~~~~~~~~~~~~~
 
 For ``NifTI`` inputs:
 
