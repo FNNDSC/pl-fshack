@@ -324,6 +324,8 @@ So, assuming the same env variables as above, and assuming that you are in the s
 
 or the first stage of ``recon-all``:
 
+.. code:: bash
+
     docker run --rm -ti                                                         \
                -v $(pwd)/fshack:/usr/src/fshack                                 \
                -v ${DEVEL}/SAG-anon/:/incoming                                  \
