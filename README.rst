@@ -27,7 +27,7 @@ This plugin is meant to demonstrate some design patterns as well as providing so
 
 Thus, while some additional internal FreeSurfer apps might be exposed at the level of the plugin entry point, the intention with this plugin is *not* to necessarily expose *all* FreeSurfer applications. Arguably, more specific and more lightweight containers and/or ChRIS plugins might be more suitable for such pervasive fine-grained coverage.
 
-Alternatively, ``pl-fshack`` does provide a full containerized FreeSurfer distribution, so the plugin could be run with an ``--entrypoint /bin/bash`` to gain access to all the underlying FreeSurfer apps (this however would not the use case in the ChRIS system -- in ChRIS only apps exposed by the plugin interface can be used).
+Alternatively, ``pl-fshack`` does provide a full containerized FreeSurfer distribution, so the plugin could be run with an ``--entrypoint /bin/bash`` to gain access to all the underlying FreeSurfer apps (this however would not be the use case in the ChRIS system -- in ChRIS only the specific apps exposed by the plugin interface can be used).
 
 From a design perspective, the main plugin programming problem revolved around exposing some random internal FreeSurfer application with the plugin requirement of needing explicit positional arguments for ``<inputdir>`` and ``<outputdir>``. Since such directory components are for the most part not explicitly used at the CLI level by FreeSurfer apps, the exposure/mapping problem becomes one of correctly constructing the CLI pattern for a given FreeSurfer application to be explicitly aware of these requirements.
 
@@ -47,8 +47,8 @@ Synopsis
 .. code::
 
     python fshack.py                                                    \
-            -i|--inputFile <inputFileWithinInputDir>                    \
-            -o|--outputFile <outputFileWithinOutputDir>                 \
+            [-i|--inputFile <inputFileWithinInputDir>]                  \
+            [-o|--outputFile <outputFileWithinOutputDir>]               \
             [-e|--exec <commandToExec>]                                 \
             [-a|--args <argsPassedToExec> ]                             \
             [-h] [--help]                                               \
@@ -80,7 +80,7 @@ Arguments
 
             '*' + <inputFileWithoutPeriod> + '*'
 
-    as the <inputFile>. So, an <inputFile> as '.0001' will assign the first
+    as the <inputFile>. So, an <inputFile> of '.0001' will assign the first
     file that satisfies the glob
 
                                     '*' + 0001 + '*'
@@ -98,7 +98,7 @@ Arguments
     CLI flag. This file is specified relative to the explicitly provided
     positional CLI <outputDir>.
 
-    Note that the <outputFile> string is used to prepend many of the CLI
+    Also note that the <outputFile> string is used to prepend many of the CLI
     -stdout -stderr and -returncode filenames.
 
     [-e|--exec <commandToExec>]
@@ -156,7 +156,7 @@ First, let's create a directory, say ``devel`` where-ever you feel like it. We w
 Now, we need to fetch sample data.
 
 Pull DICOM
-^^^^^^^^^^
+~~~~~~~~~~
 
 - We provide a sample directory of anonymous ``.dcm`` images here: (https://github.com/FNNDSC/SAG-anon.git)
 
@@ -169,7 +169,7 @@ Pull DICOM
 - Make sure the ``SAG-anon`` directory is placed in the ``devel`` directory (you should be there already if you are following along)
 
 Pull NIFTI
-^^^^^^^^^^
+~~~~~~~~~~
 
 - We provide a sample directory of a ``.nii`` volume here. (https://github.com/FNNDSC/SAG-anon-nii.git)
 

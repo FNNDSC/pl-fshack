@@ -89,7 +89,7 @@ Gstr_synopsis = """
 
                         '*' + <inputFileWithoutPeriod> + '*'
 
-        as the <inputFile>. So, an <inputFile> as '.0001' will assign the first
+        as the <inputFile>. So, an <inputFile> of '.0001' will assign the first
         file that satisfies the glob
 
                                     '*0001*'
@@ -107,7 +107,7 @@ Gstr_synopsis = """
         CLI flag. This file is specified relative to the explicitly provided
         positional CLI <outputDir>.
 
-        Note that the <outputFile> string is used to prepend many of the CLI
+        Also note that the <outputFile> string is used to prepend many of the CLI
         -stdout -stderr and -returncode filenames.
 
         [-e|--exec <commandToExec>]
