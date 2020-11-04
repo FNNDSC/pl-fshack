@@ -59,7 +59,7 @@ Synopsis
             [-v|--verbosity <level>]                                    \
             [--version]                                                 \
             <inputDir>                                                  \
-            <outputDir> 
+            <outputDir>
 
 Description
 -----------
@@ -71,49 +71,70 @@ Arguments
 
 .. code::
 
-    -i|--inputFile <inputFileWithinInputDir>
-    Input file to process. In most cases this is typically a DICOM file or a nifti volume,
-    but is also very dependent on context. This file exists within the explictly provided CLI
-    positional <inputDir>.
+    [-i|--inputFile <inputFileWithinInputDir>]
+    Input file to process. In most cases this is typically a DICOM file
+    or a nifti volume, but is also very dependent on context. This file
+    exists within the explictly provided CLI positional <inputDir>. If
+    specified as a string that starts with a period '.', then examine the
+    <inputDir> and assign the first ls-ordered file in the glob pattern:
 
-    -o|--outputFile <outputFileWithinOutputDir>
-    Output file/directory name to store the output in within the outputDir.
-    Note: In the case of `recon-all`, this argument maps to the  
-    
-            -s|--subjectID <subjID> 
-            
-    CLI flag. This file is specified relative to the explicitly provided positional
-    CLI <outputDir>.
+            '*' + <inputFileWithoutPeriod> + '*'
+
+    as the <inputFile>. So, an <inputFile> as '.0001' will assign the first
+    file that satisfies the glob
+
+                                    '*' + 0001 + '*'
+
+    as <inputFile>.
+
+    [-o|--outputFile <outputFileWithinOutputDir>]
+    Output file/directory name to use within the <outputDir>. Note the
+    actual meaning of this usage is contextual to the particular <FSapp>.
+
+    Note: In the case of `recon-all`, this argument maps to the
+
+            -s|--subjectID <subjID>
+
+    CLI flag. This file is specified relative to the explicitly provided
+    positional CLI <outputDir>.
+
+    Note that the <outputFile> string is used to prepend many of the CLI
+    -stdout -stderr and -returncode filenames.
 
     [-e|--exec <commandToExec>]
-    Specifies the FreeSurfer command within the plugin/container to execute. 
-    
+    Specifies the FreeSurfer command within the plugin/container to execute.
+
     Note that only a few of the FreeSurfer apps are currently exposed!
 
     [-a|--args <argsPassedToExec>]
-    Optional string of additional arguments to "pass through" to the FreeSurfer app.
-    
-    The design pattern of this plugin is to provide all the CLI args for a single app
-    specificed `-exec` somewhat blindly. To this end, all the args for a given internal
-    FreeSurfer app are themselves specified at the plugin level with this flag. These
-    args MUST be contained within single quotes (to protect them from the shell) and 
-    the quoted string MUST start with the required keyword 'ARGS: '.
+    Optional string of additional arguments to "pass through" to the
+    FreeSurfer app.
+
+    The design pattern of this plugin is to provide all the CLI args for
+    a single app specificed `-exec` somewhat blindly. To this end, all the
+    args for a given internal FreeSurfer app are themselves specified at
+    the plugin level with this flag. These args MUST be contained within
+    single quotes (to protect them from the shell) and the quoted string
+    MUST start with the required keyword 'ARGS: '.
+
+    If the `--exec <FSapp>` does not require additional CLI args, then
+    this `--args <args>` can be safely omitted.
 
     [-h] [--help]
     If specified, show some help.
-        
+
     [--json]
     If specified, show the JSON representation of this plugin.
-        
+
     [--man]
     If specified, print (this) man page.
 
     [--meta]
     If specified, print plugin meta data.
-        
-    [--savejson <DIR>] 
-    If specified, save JSON representation file to DIR. 
-        
+
+    [--savejson <DIR>]
+    If specified, save JSON representation file to DIR.
+
     [--version]
     If specified, print version number and exit.
 
@@ -199,7 +220,7 @@ For ``NifTI`` inputs:
         --exec recon-all                                                    \
         --args 'ARGS: -all -notalairach'                                    \
         /incoming /outgoing
-        
+
 For ``DICOM`` inputs:
 
 .. code:: bash
@@ -233,12 +254,12 @@ NOTE: The ``recon-all`` commands will take multiple hours to run to completion!
 
 The results of the below information query are stored in text files
 
-.. code:: bash 
-  
+.. code:: bash
+
     /outgoing/info-stdout
     /outgoing/info-stderr
     /outgoing/info-returncode
-    
+
 
 .. code:: bash
 
@@ -253,7 +274,7 @@ The results of the below information query are stored in text files
 ``mris_info``
 ^^^^^^^^^^^^
 
-To run ``mris_info`` we need a typical FreeSurfer curvature file. 
+To run ``mris_info`` we need a typical FreeSurfer curvature file.
 
 Luckily such typical files exist in the output directory of another ChRIS plugin called ``pl-freesurfer_pp``. Despite the name, the ``pl-freesurfer_pp`` is *NOT* a FreeSurfer container, but merely a simluated one that contains a pre-processed (hence the ``_pp``) set of data generated from a FreeSurfer run.
 
@@ -268,7 +289,7 @@ Let's run that plugin to generate its output tree and then run ``mris_info`` on 
         -c surf                                                         \
         -- /incoming /outgoing
 
-The output of the above command is a directory called ``surf`` that should be located in the ``results`` directory. A sample curvature file named ``rh.smoothwm`` from the ``results/surf`` directory is passed as the inputFile to the docker command below. 
+The output of the above command is a directory called ``surf`` that should be located in the ``results`` directory. A sample curvature file named ``rh.smoothwm`` from the ``results/surf`` directory is passed as the inputFile to the docker command below.
 
 .. code:: bash
 
@@ -279,7 +300,7 @@ The output of the above command is a directory called ``surf`` that should be lo
         -o mris_info.txt                                                    \
         --exec mris_info                                                    \
         /incoming /outgoing
-        
+
 Debug
 -----
 
@@ -296,9 +317,22 @@ So, assuming the same env variables as above, and assuming that you are in the s
                -v ${DEVEL}/SAG-anon/:/incoming                                  \
                -v ${DEVEL}/results/:/outgoing                                   \
                fnndsc/pl-fshack fshack.py                                       \
-               -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm \       
+               -i .dcm                                                          \
                -o info                                                          \
                --exec mri_info                                                  \
+               /incoming /outgoing
+
+or the first stage of ``recon-all``:
+
+    docker run --rm -ti                                                         \
+               -v $(pwd)/fshack:/usr/src/fshack                                 \
+               -v ${DEVEL}/SAG-anon/:/incoming                                  \
+               -v ${DEVEL}/results/:/outgoing                                   \
+               fnndsc/pl-fshack fshack.py                                       \
+               -i .dcm                                                          \
+               -o recon-all                                                     \
+               --exec mri_info                                                  \
+               --args 'ARGS: -autorecon1'                                       \
                /incoming /outgoing
 
 Obviously, adapt the above as needed.

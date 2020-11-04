@@ -28,39 +28,41 @@ FROM fnndsc/ubuntu-python3:latest
 # FROM fnndsc/centos-python3:latest
 LABEL maintainer="dev@babymri.org"
 
+ARG UID=1001
 ENV APPROOT="/usr/src/fshack"
-ENV DEBIAN_FRONTEND=noninteractive VERSION="0.1"
+ENV UID=$UID DEBIAN_FRONTEND=noninteractive
 COPY ["fshack/", "requirements.txt", "license.txt", "${APPROOT}/"]
 
 WORKDIR $APPROOT
 
-RUN pip install -r requirements.txt \
-    && apt-get update -q &&         \
+RUN pip install -r requirements.txt                         \
+    && apt-get update -q &&                                 \
     apt-get -qq install bc binutils libgomp1 perl psmisc curl tar tcsh uuid-dev vim-common libjpeg62-dev \
-    libglu1-mesa libxmu6 libglib2.0-0 qt5-default && \
+    libglu1-mesa libxmu6 libglib2.0-0 qt5-default &&        \
     curl https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.1.0/freesurfer-linux-centos8_x86_64-7.1.0.tar.gz | \
-    tar -C /usr/local -xz                    \
-    && mv license.txt /usr/local/freesurfer  \
-    && apt-get install -y locales            \
-    && export LANGUAGE=en_US.UTF-8           \
-    && export LANG=en_US.UTF-8               \
-    && export LC_ALL=en_US.UTF-8             \
-    && locale-gen en_US.UTF-8                \
-    && dpkg-reconfigure locales
+    tar -C /usr/local -xz                                   \
+    && mv license.txt /usr/local/freesurfer                 \
+    && apt-get install -y locales                           \
+    && export LANGUAGE=en_US.UTF-8                          \
+    && export LANG=en_US.UTF-8                              \
+    && export LC_ALL=en_US.UTF-8                            \
+    && locale-gen en_US.UTF-8                               \
+    && dpkg-reconfigure locales                             \
+    && useradd -u $UID -ms /bin/bash localuser
 
 ENV PATH="/usr/local/freesurfer/bin:/usr/local/freesurfer/fsfast/bin:/usr/local/freesurfer/tktools:/usr/local/freesurfer/mni/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:" \
-    FREESURFER_HOME="/usr/local/freesurfer" \
-    SUBJECTS_DIR="/outgoing" \
-    MINC_LIB_DIR="/usr/local/freesurfer/mni/lib" \
-    MNI_DATAPATH="/usr/local/freesurfer/mni/data" \
-    PERL5LIB="/usr/local/freesurfer/mni/share/perl5" \
-    MINC_BIN_DIR="/usr/local/freesurfer/mni/bin" \
-    MNI_PERL5LIB="/usr/local/freesurfer/mni/share/perl5" \
-    FMRI_ANALYSIS_DIR="/usr/local/freesurfer/fsfast" \
-    FUNCTIONALS_DIR="/usr/local/freesurfer/sessions" \
-    LOCAL_DIR="/usr/local/freesurfer/local" \
-    FSFAST_HOME="/usr/local/freesurfer/fsfast" \
-    MNI_DIR="/usr/local/freesurfer/mni" \
+    FREESURFER_HOME="/usr/local/freesurfer"                 \
+    SUBJECTS_DIR="/outgoing"                                \
+    MINC_LIB_DIR="/usr/local/freesurfer/mni/lib"            \
+    MNI_DATAPATH="/usr/local/freesurfer/mni/data"           \
+    PERL5LIB="/usr/local/freesurfer/mni/share/perl5"        \
+    MINC_BIN_DIR="/usr/local/freesurfer/mni/bin"            \
+    MNI_PERL5LIB="/usr/local/freesurfer/mni/share/perl5"    \
+    FMRI_ANALYSIS_DIR="/usr/local/freesurfer/fsfast"        \
+    FUNCTIONALS_DIR="/usr/local/freesurfer/sessions"        \
+    LOCAL_DIR="/usr/local/freesurfer/local"                 \
+    FSFAST_HOME="/usr/local/freesurfer/fsfast"              \
+    MNI_DIR="/usr/local/freesurfer/mni"                     \
     FSF_OUTPUT_FORMAT="nii.gz"
 
 CMD ["fshack.py", "--help"]

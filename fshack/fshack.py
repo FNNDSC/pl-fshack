@@ -10,15 +10,16 @@
 #
 
 
-import os
-import sys
-import subprocess
+import  os
+import  sys
+import  subprocess
+import  glob
 
 sys.path.append(os.path.dirname(__file__))
 
 # import the Chris app superclass
-from chrisapp.base import ChrisApp
-import pudb
+from    chrisapp.base import ChrisApp
+import  pudb
 
 Gstr_title = """
 
@@ -42,8 +43,8 @@ Gstr_synopsis = """
     SYNOPSIS
 
         python fshack.py                                                \\
-            -i|--inputFile <inputFileWithinInputDir>                    \\
-            -o|--outputFile <outputFileWithinOutputDir>                 \\
+            [-i|--inputFile <inputFileWithinInputDir>]                  \\
+            [-o|--outputFile <outputFileWithinOutputDir>]               \\
             [-e|--exec <commandToExec>]                                 \\
             [-a|--args <argsPassedToExec> ]                             \\
             [-h] [--help]                                               \\
@@ -79,19 +80,35 @@ Gstr_synopsis = """
 
     ARGS
 
-        -i|--inputFile <inputFileWithinInputDir>
+        [-i|--inputFile <inputFileWithinInputDir>]
         Input file to process. In most cases this is typically a DICOM file
         or a nifti volume, but is also very dependent on context. This file
-        exists within the explictly provided CLI positional <inputDir>.
+        exists within the explictly provided CLI positional <inputDir>. If
+        specified as a string that starts with a period '.', then examine the
+        <inputDir> and assign the first ls-ordered file in the glob pattern:
 
-        -o|--outputFile <outputFileWithinOutputDir>
-        Output file/directory name to store the output in within the outputDir.
+                        '*' + <inputFileWithoutPeriod> + '*'
+
+        as the <inputFile>. So, an <inputFile> as '.0001' will assign the first
+        file that satisfies the glob
+
+                                    '*0001*'
+
+        as <inputFile>.
+
+        [-o|--outputFile <outputFileWithinOutputDir>]
+        Output file/directory name to use within the <outputDir>. Note the
+        actual meaning of this usage is contextual to the particular <FSapp>.
+
         Note: In the case of `recon-all`, this argument maps to the
 
                 -s|--subjectID <subjID>
 
         CLI flag. This file is specified relative to the explicitly provided
         positional CLI <outputDir>.
+
+        Note that the <outputFile> string is used to prepend many of the CLI
+        -stdout -stderr and -returncode filenames.
 
         [-e|--exec <commandToExec>]
         Specifies the FreeSurfer command within the plugin/container to
@@ -148,7 +165,7 @@ class Fshack(ChrisApp):
     CATEGORY                = ''
     TYPE                    = 'ds'
     DOCUMENTATION           = 'https://github.com/FNNDSC/pl-fshack'
-    VERSION                 = '1.1.4'
+    VERSION                 = '1.2.0'
     ICON                    = ''  # url of an icon image
     LICENSE                 = 'Opensource (MIT)'
     MAX_NUMBER_OF_WORKERS   = 1  # Override with integer value
@@ -178,33 +195,33 @@ class Fshack(ChrisApp):
         Define the CLI arguments accepted by this plugin app.
         """
         self.add_argument("-a", "--args",
-                          help="FS arguments to pass",
-                          type=str,
-                          dest='args',
+                          help      = "FS arguments to pass",
+                          type      = str,
+                          dest      = 'args',
                           optional=True,
-                          default="")
+                          default   = "")
         self.add_argument("-e", "--exec",
-                          help="FS app to run",
-                          type=str,
-                          dest='exec',
-                          optional=True,
-                          default="recon-all")
+                          help      = "FS app to run",
+                          type      = str,
+                          dest      = 'exec',
+                          optional  = True,
+                          default   = "recon-all")
         self.add_argument("-i", "--inputFile",
-                          help="input file",
-                          type=str,
-                          dest='inputFile',
-                          optional=False,
-                          default="")
+                          help      = "input file (use .<ext> to find and use the first file with that extension)",
+                          type      = str,
+                          dest      = 'inputFile',
+                          optional  = True,
+                          default   = "")
         self.add_argument("-o", "--outputFile",
-                          help="output file",
-                          type=str,
-                          dest='outputFile',
-                          optional=True,
-                          default="")
+                          help      = "output file",
+                          type      = str,
+                          dest      = 'outputFile',
+                          optional  = True,
+                          default   = "run")
 
     def job_run(self, str_cmd):
         """
-        Running some CLI process via python is cumbersome. The typical/easy 
+        Running some CLI process via python is cumbersome. The typical/easy
         path of
 
                             os.system(str_cmd)
@@ -216,7 +233,7 @@ class Fshack(ChrisApp):
 
         Providing readtime output of both stdout and stderr seems
         problematic. The approach here is to provide realtime
-        output on stdout and only provide stderr on prcoess completion.
+        output on stdout and only provide stderr on process completion.
 
         """
         d_ret = {
@@ -265,6 +282,27 @@ class Fshack(ChrisApp):
             'status': True
         }
 
+    def inputFileSpec_parse(self, options):
+        """
+        Parse the inputFile value and possibly trigger some contentual
+        behaviour. Specifically, if the inputFile spec starts with a
+        period, '.', then search the inputDir for the first file with
+        that substring and assign that file as inputFile.
+
+        Modify the options variable in place.
+        """
+        str_thisDir:    str     = ''
+        str_pattern:    str     = ''
+        l_files:        list    = []
+        if options.inputFile.startswith('.'):
+            str_pattern     = options.inputFile[1:]
+            str_thisDir     = os.getcwd()
+            os.chdir(options.inputdir)
+            l_files         = glob.glob('*' + str_pattern + '*')
+            if len(l_files):
+                options.inputFile = l_files[0]
+            os.chdir(str_thisDir)
+
     def run(self, options):
         """
         Define the code to be run by this plugin app.
@@ -275,6 +313,8 @@ class Fshack(ChrisApp):
         for k,v in options.__dict__.items():
             print("%20s:  -->%s<--" % (k, v))
         self.options    = options
+
+        self.inputFileSpec_parse(options)
 
         str_args    = ""
         l_appargs   = options.args.split('ARGS:')
