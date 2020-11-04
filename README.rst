@@ -237,7 +237,7 @@ For ``DICOM`` inputs:
 NOTE: The ``recon-all`` commands will take multiple hours to run to completion!
 
 ``mri_convert``
-^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~
 
 .. code:: bash
 
@@ -250,7 +250,7 @@ NOTE: The ``recon-all`` commands will take multiple hours to run to completion!
         /incoming /outgoing
 
 ``mri_info``
-^^^^^^^^^^^^
+~~~~~~~~~~~~~
 
 The results of the below information query are stored in text files
 
@@ -272,7 +272,7 @@ The results of the below information query are stored in text files
         /incoming /outgoing
 
 ``mris_info``
-^^^^^^^^^^^^
+~~~~~~~~~~~~~
 
 To run ``mris_info`` we need a typical FreeSurfer curvature file.
 
