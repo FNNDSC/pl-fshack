@@ -301,6 +301,21 @@ The output of the above command is a directory called ``surf`` that should be lo
         --exec mris_info                                                    \
         /incoming /outgoing
 
+Arbitrary FS app
+~~~~~~~~~~~~~~~~
+
+Running an arbitrary FS app requires calling that app directly in the container with an appropriate ``--entrypoint``. For instance, let's use ``mri_mask`` as an example. Assume that two ``nii`` files, ``file1.nii`` and ``file2.nii``, are in the directory ``${DEVEL}/test``: 
+
+.. code:: bash
+
+    docker run --rm                                                         \
+        -v $(DEVEL)/test:/incoming -v $(DEVEL)/results/:/outgoing           \
+        --entrypoint /usr/local/freesurfer/bin/mri_mask                     \
+        fnndsc/pl-fshack                                                    \
+        /incoming/file1.nii /incoming/file2.nii /outgoing/out.nii
+
+In the above, the third line explicitly defines the FS app to call, and the last line the pattern of CLI relevant to that app. Outputs are stored in the ``/outgoing`` directory of the container that is volume mapped as shown to ``${DEVEL}/results``.
+
 Debug
 -----
 
