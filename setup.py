@@ -21,8 +21,8 @@ setup(
       name             =   'fshack',
       # for best practices make this version the same as the VERSION class variable
       # defined in your ChrisApp-derived Python class
-      version          =   '1.2.0',
-      description      =   'This app will house a complete FreeSurfer install and run it via the plugin',
+      version          =   '1.2.2',
+      description      =   'A containerized FreeSurfer, with several modes of operation accessible via specific CLI patterning',
       long_description =   readme(),
       author           =   'FNNDSC',
       author_email     =   'dev@babyMRI.org',
