@@ -171,9 +171,9 @@ class Fshack(ChrisApp):
     MAX_NUMBER_OF_WORKERS   = 1  # Override with integer value
     MIN_NUMBER_OF_WORKERS   = 1  # Override with integer value
     MAX_CPU_LIMIT           = ''  # Override with millicore value as string, e.g. '2000m'
-    MIN_CPU_LIMIT           = ''  # Override with millicore value as string, e.g. '2000m'
+    MIN_CPU_LIMIT           = '2000m'  # Override with millicore value as string, e.g. '2000m'
     MAX_MEMORY_LIMIT        = ''  # Override with string, e.g. '1Gi', '2000Mi'
-    MIN_MEMORY_LIMIT        = ''  # Override with string, e.g. '1Gi', '2000Mi'
+    MIN_MEMORY_LIMIT        = '2000Mi'  # Override with string, e.g. '1Gi', '2000Mi'
     MIN_GPU_LIMIT           = 0  # Override with the minimum number of GPUs, as an integer, for your plugin
     MAX_GPU_LIMIT           = 0  # Override with the maximum number of GPUs, as an integer, for your plugin
 
