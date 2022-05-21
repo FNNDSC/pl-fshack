@@ -14,6 +14,8 @@ import  os
 import  sys
 import  subprocess
 import  glob
+import  time
+from fshack._output import PrefixedSink, MultiSink
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -219,28 +221,16 @@ class Fshack(ChrisApp):
                           optional  = True,
                           default   = "run")
 
-    def job_run(self, str_cmd):
+    def job_run(self, str_cmd, stdout, stderr) -> int:
         """
-        Running some CLI process via python is cumbersome. The typical/easy
-        path of
+        Run a command, redirecting its output to any number of output streams.
+        Output is polled for every 2 seconds and written to the given handles.
 
-                            os.system(str_cmd)
-
-        is deprecated and prone to hidden complexity. The preferred
-        method is via subprocess, which has a cumbersome processing
-        syntax. Still, this method runs the `str_cmd` and returns the
-        stderr and stdout strings as well as a returncode.
-
-        Providing readtime output of both stdout and stderr seems
-        problematic. The approach here is to provide realtime
-        output on stdout and only provide stderr on process completion.
-
+        :param str_cmd: command to run
+        :param stdout: writable file-like object
+        :param stderr: writable file-like object
+        :return: subprocess exit code
         """
-        d_ret = {
-            'stdout':       "",
-            'stderr':       "",
-            'returncode':   0
-        }
 
         localEnv    = os.environ.copy()
         localEnv["SUBJECTS_DIR"] = self.options.outputdir
@@ -251,36 +241,19 @@ class Fshack(ChrisApp):
                     env         = localEnv
                     )
 
-        # Realtime output on stdout
-        str_stdoutLine  = ""
-        str_stdout      = ""
-        while True:
-            stdout      = p.stdout.readline()
-            if p.poll() is not None:
-                break
-            if stdout:
-                str_stdoutLine = stdout.decode()
-                print(str_stdoutLine, end = '')
-                str_stdout      += str_stdoutLine
-        d_ret['stdout']     = str_stdout
-        d_ret['stderr']     = p.stderr.read().decode()
-        d_ret['returncode'] = p.returncode
-        print('\nstderr: \n%s' % d_ret['stderr'])
-        return d_ret
+        # subprocess.Popen can only accept "real" file descriptors as stdout and stderr,
+        # not any kind of file-like object, so polling is a necessary workaround.
+        # https://stackoverflow.com/questions/19409025/python-stringio-doesnt-work-as-file-with-subrpocess-call
+        while p.poll() is not None:
+            stdout.write(p.stdout.read())
+            stderr.write(p.stderr.read())
+            time.sleep(2.0)
 
-    def job_stdwrite(self, d_job, options):
-        """
-        Capture the d_job entries to respective files.
-        """
-        for key in d_job.keys():
-            with open(
-                '%s/%s-%s' % (options.outputdir, options.outputFile, key), "w"
-            ) as f:
-                f.write(str(d_job[key]))
-                f.close()
-        return {
-            'status': True
-        }
+        # flush remaining output in case poll finishes very fast
+        stdout.write(p.stdout.read())
+        stderr.write(p.stderr.read())
+
+        return p.returncode
 
     def inputFileSpec_parse(self, options):
         """
@@ -351,9 +324,21 @@ class Fshack(ChrisApp):
 
         # Run the job and provide realtime stdout
         # and post-run stderr
-        self.job_stdwrite(
-            self.job_run(str_cmd), options
-        )
+        m_stdout = MultiSink((
+            PrefixedSink(sys.stdout, f"({options.inputFile})"),
+            open(f'{options.outputdir}/{options.outputFile}-stdout', 'w')
+        ))
+        m_stderr = MultiSink((
+            PrefixedSink(sys.stderr, f"({options.inputFile})"),
+            open(f'{options.outputdir}/{options.outputFile}-stderr', 'w')
+        ))
+        with m_stdout as stdout, m_stderr as stderr:
+            rc = self.job_run(str_cmd, stdout, stderr)
+
+        with open(f'{options.outputdir}/{options.outputFile}-returncode', 'w') as rc_file:
+            rc_file.write(str(rc))
+
+        sys.exit(rc)
 
     def show_man_page(self):
         """
