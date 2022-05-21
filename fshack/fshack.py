@@ -261,8 +261,6 @@ class Fshack(ChrisApp):
         behaviour. Specifically, if the inputFile spec starts with a
         period, '.', then search the inputDir for the first file with
         that substring and assign that file as inputFile.
-
-        Modify the options variable in place.
         """
         str_thisDir:    str     = ''
         str_pattern:    str     = ''
@@ -273,8 +271,9 @@ class Fshack(ChrisApp):
             os.chdir(options.inputdir)
             l_files         = glob.glob('*' + str_pattern + '*')
             if len(l_files):
-                options.inputFile = l_files[0]
+                return l_files[0]
             os.chdir(str_thisDir)
+        return options.inputFile
 
     def run(self, options):
         """
@@ -287,7 +286,7 @@ class Fshack(ChrisApp):
             print("%20s:  -->%s<--" % (k, v))
         self.options    = options
 
-        self.inputFileSpec_parse(options)
+        options.inputFile = self.inputFileSpec_parse(options)
 
         str_args    = ""
         l_appargs   = options.args.split('ARGS:')
