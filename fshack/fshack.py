@@ -12,12 +12,11 @@
 
 import  os
 import  sys
-import  subprocess
+import  asyncio
 import  glob
-import  time
 import  copy
 from argparse import Namespace
-from typing import Iterator
+from typing import Iterator, TextIO
 from pathlib import Path
 from chris_plugin import PathMapper
 from fshack._output import PrefixedSink, MultiSink
@@ -226,10 +225,9 @@ class Fshack(ChrisApp):
                           optional  = True,
                           default   = "run")
 
-    def job_run(self, str_cmd, stdout, stderr, subjects_dir: str) -> int:
+    async def job_run(self, str_cmd, stdout, stderr, subjects_dir: str) -> int:
         """
         Run a command, redirecting its output to any number of output streams.
-        Output is polled for every 2 seconds and written to the given handles.
 
         :param str_cmd: command to run
         :param stdout: writable file-like object
@@ -240,25 +238,12 @@ class Fshack(ChrisApp):
 
         localEnv    = os.environ.copy()
         localEnv["SUBJECTS_DIR"] = subjects_dir
-        p = subprocess.Popen(
-                    str_cmd.split(),
-                    stdout      = subprocess.PIPE,
-                    stderr      = subprocess.PIPE,
-                    env         = localEnv
-                    )
-
-        # subprocess.Popen can only accept "real" file descriptors as stdout and stderr,
-        # not any kind of file-like object, so polling is a necessary workaround.
-        # https://stackoverflow.com/questions/19409025/python-stringio-doesnt-work-as-file-with-subrpocess-call
-        while p.poll() is not None:
-            stdout.write(p.stdout.read())
-            stderr.write(p.stderr.read())
-            time.sleep(2.0)
-        # flush remaining output in case poll finishes very fast
-        stdout.write(p.stdout.read())
-        stderr.write(p.stderr.read())
-
-        return p.returncode
+        process = await asyncio.create_subprocess_shell(str_cmd, env=localEnv,
+                                                        stdout=asyncio.subprocess.PIPE,
+                                                        stderr=asyncio.subprocess.PIPE)
+        await asyncio.gather(_handle(process.stdout, stdout), _handle(process.stderr, stderr))
+        await process.wait()
+        return process.returncode
 
     def inputFileSpec_parse(self, options):
         """
@@ -290,7 +275,7 @@ class Fshack(ChrisApp):
             print("%20s:  -->%s<--" % (k, v))
 
         for subject in self.map_inputs(options):
-            rc = self.process_subject(subject)
+            rc = asyncio.run(self.process_subject(subject))
             if rc != 0:
                 sys.exit(rc)
 
@@ -341,7 +326,6 @@ class Fshack(ChrisApp):
         ``options`` is returned as-is.
         """
         mapper = PathMapper.dir_mapper_deep(Path(options.inputdir), Path(options.outputdir))
-        print(mapper)
         if mapper.is_empty():
             print('WARNING: mapper is empty, assuming base')
             yield options
@@ -352,7 +336,7 @@ class Fshack(ChrisApp):
             options_copy.outputdir = sub_output
             yield options_copy
 
-    def process_subject(self, options: Namespace) -> int:
+    async def process_subject(self, options: Namespace) -> int:
         """
         Run the selected fshack program.
 
@@ -375,7 +359,7 @@ class Fshack(ChrisApp):
             open(f'{options.outputdir}/{options.outputFile}-stderr', 'w')
         ))
         with m_stdout as stdout, m_stderr as stderr:
-            rc = self.job_run(str_cmd, stdout, stderr, options.outputdir)
+            rc = await self.job_run(str_cmd, stdout, stderr, options.outputdir)
 
         with open(f'{options.outputdir}/{options.outputFile}-returncode', 'w') as rc_file:
             rc_file.write(str(rc))
@@ -387,6 +371,11 @@ class Fshack(ChrisApp):
         Print the app's man page.
         """
         print(Gstr_synopsis)
+
+
+async def _handle(source: asyncio.StreamReader, sink: TextIO):
+    while len(data := await source.read(1)) == 1:
+        sink.write(data.decode(encoding='utf-8'))
 
 
 # ENTRYPOINT
