@@ -21,7 +21,7 @@ from typing import Iterator, TextIO
 from pathlib import Path
 from colorama import Fore
 from chris_plugin import PathMapper
-from fshack._output import PrefixedSink, MultiSink
+from _output import PrefixedSink, MultiSink
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -388,7 +388,7 @@ class Fshack(ChrisApp):
         str_cmd = self.create_cmd(options)
         # Run the job and provide realtime stdout
         # and post-run stderr
-        os.mkdir(options.outputdir)
+        os.makedirs(options.outputdir, exist_ok=True)
         m_stdout = MultiSink((
             PrefixedSink(sys.stdout, prefix=options.display_prefix, suffix=Fore.RESET),
             open(f'{options.outputdir}/{options.outputFile}-stdout', 'w')
