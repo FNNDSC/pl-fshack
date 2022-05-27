@@ -358,6 +358,7 @@ class Fshack(ChrisApp):
         mapper = PathMapper.dir_mapper_deep(input_dir, output_dir)
         if mapper.is_empty():
             print('WARNING: mapper is empty, assuming base')
+            options.display_prefix = ''
             yield options
             return
         for sub_input, sub_output in mapper:
