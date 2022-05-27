@@ -279,7 +279,6 @@ class Fshack(ChrisApp):
         """
         Define the code to be run by this plugin app.
         """
-        global str_cmd
         print(Gstr_title)
         print('Version: %s' % self.get_version())
         for k,v in options.__dict__.items():
@@ -288,7 +287,29 @@ class Fshack(ChrisApp):
 
         options.inputFile = self.inputFileSpec_parse(options)
 
-        str_args    = ""
+        str_cmd = self.create_cmd(options)
+        # Run the job and provide realtime stdout
+        # and post-run stderr
+        m_stdout = MultiSink((
+            PrefixedSink(sys.stdout, f"({options.inputFile})"),
+            open(f'{options.outputdir}/{options.outputFile}-stdout', 'w')
+        ))
+        m_stderr = MultiSink((
+            PrefixedSink(sys.stderr, f"({options.inputFile})"),
+            open(f'{options.outputdir}/{options.outputFile}-stderr', 'w')
+        ))
+        with m_stdout as stdout, m_stderr as stderr:
+            rc = self.job_run(str_cmd, stdout, stderr)
+
+        with open(f'{options.outputdir}/{options.outputFile}-returncode', 'w') as rc_file:
+            rc_file.write(str(rc))
+
+        sys.exit(rc)
+
+    def create_cmd(self, options) -> str:
+        """
+        Complicated behavior that I moved into a helper method for the sake of hiding it.
+        """
         l_appargs   = options.args.split('ARGS:')
         if len(l_appargs) == 2:
             str_args = l_appargs[1]
@@ -321,23 +342,7 @@ class Fshack(ChrisApp):
                        options.exec, options.inputdir, options.inputFile,
                        str_args)
 
-        # Run the job and provide realtime stdout
-        # and post-run stderr
-        m_stdout = MultiSink((
-            PrefixedSink(sys.stdout, f"({options.inputFile})"),
-            open(f'{options.outputdir}/{options.outputFile}-stdout', 'w')
-        ))
-        m_stderr = MultiSink((
-            PrefixedSink(sys.stderr, f"({options.inputFile})"),
-            open(f'{options.outputdir}/{options.outputFile}-stderr', 'w')
-        ))
-        with m_stdout as stdout, m_stderr as stderr:
-            rc = self.job_run(str_cmd, stdout, stderr)
-
-        with open(f'{options.outputdir}/{options.outputFile}-returncode', 'w') as rc_file:
-            rc_file.write(str(rc))
-
-        sys.exit(rc)
+        return str_cmd
 
     def show_man_page(self):
         """
