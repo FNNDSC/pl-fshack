@@ -157,6 +157,9 @@ Gstr_synopsis = """
 
 """
 
+MAX_CONCURRENT_JOBS = len(os.sched_getaffinity(0))
+sem = asyncio.Semaphore(MAX_CONCURRENT_JOBS)
+
 
 class Fshack(ChrisApp):
     DESCRIPTION  = '''
@@ -274,10 +277,15 @@ class Fshack(ChrisApp):
         for k,v in options.__dict__.items():
             print("%20s:  -->%s<--" % (k, v))
 
-        for subject in self.map_inputs(options):
-            rc = asyncio.run(self.process_subject(subject))
-            if rc != 0:
-                sys.exit(rc)
+        rc = asyncio.run(self.__run_all(options))
+        sys.exit(rc)
+
+    async def __run_all(self, options) -> int:
+        subjects = self.map_inputs(options)
+        results = await asyncio.gather(*(self.process_subject(subject) for subject in subjects))
+        for bad_rc in filter(lambda rc: rc != 0, results):
+            return bad_rc
+        return 0
 
     def create_cmd(self, options) -> str:
         """
@@ -343,6 +351,8 @@ class Fshack(ChrisApp):
         Consumes and mutates options.
 
         Returns exit code.
+
+        This method uses the global ``sem`` object to restrict the number of parallel subprocesses.
         """
         options.inputFile = self.inputFileSpec_parse(options)
 
@@ -351,15 +361,16 @@ class Fshack(ChrisApp):
         # and post-run stderr
         os.mkdir(options.outputdir)
         m_stdout = MultiSink((
-            PrefixedSink(sys.stdout, f"({options.inputFile})"),
+            PrefixedSink(sys.stdout, prefix=f"({options.inputFile})", suffix=""),
             open(f'{options.outputdir}/{options.outputFile}-stdout', 'w')
         ))
         m_stderr = MultiSink((
-            PrefixedSink(sys.stderr, f"({options.inputFile})"),
+            PrefixedSink(sys.stderr, prefix=f"({options.inputFile})", suffix=""),
             open(f'{options.outputdir}/{options.outputFile}-stderr', 'w')
         ))
         with m_stdout as stdout, m_stderr as stderr:
-            rc = await self.job_run(str_cmd, stdout, stderr, options.outputdir)
+            async with sem:
+                rc = await self.job_run(str_cmd, stdout, stderr, options.outputdir)
 
         with open(f'{options.outputdir}/{options.outputFile}-returncode', 'w') as rc_file:
             rc_file.write(str(rc))
