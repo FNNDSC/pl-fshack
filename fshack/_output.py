@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from io import StringIO
 from typing import Collection, AnyStr, IO, ContextManager, TextIO, Iterable
 
 
@@ -13,6 +14,10 @@ class MultiSink:
     def close(self) -> None:
         for s in self.streams:
             s.close()
+
+    def flush(self) -> None:
+        for s in self.streams:
+            s.flush()
 
     def write(self, data: AnyStr) -> None:
         for s in self.streams:
@@ -36,16 +41,22 @@ class MultiSink:
 
 
 @dataclass()
-class PrefixedSink(ContextManager):
+class PrefixedSink(ContextManager['PrefixedSink']):
     """
-    A writable file-like object which prepends a prefix to every new line of text output.
+    A writable file-like object which prepends a prefix and appends a suffix
+    to every new line of text output.
+
+    Text is only written to the underlying sink when a line is complete, i.e. after
+    '\n' is received, or when the ``flush`` method is called.
     """
     sink: TextIO
     """Output stream"""
     prefix: str
     """Prefix to print before every line"""
-    __first: bool = True
-    """Whether or not it's necessary to print prefix before printing the next character"""
+    suffix: str
+    """Suffix to print after every line"""
+    __buffer: StringIO = field(default_factory=StringIO)
+    __empty: bool = True
 
     def write(self, data: str):
         for char in data:
@@ -54,17 +65,35 @@ class PrefixedSink(ContextManager):
     def _write_char(self, char: str):
         """
         Write a single character to the wrapped output stream,
-        printing out the prefix when necessary.
+        printing only after encountering '\n'.
         """
-        if self.__first:
-            self.sink.write(self.prefix)
-            self.__first = False
-        self.sink.write(char)
-        if char == '\n':
-            self.__first = True
+        if self.__empty:
+            self.__empty = False
+            self.__buffer.write(self.prefix)
 
-    def __enter__(self):
+        if char == '\n':
+            self.__buffer.write(self.suffix)
+            self.__buffer.write(char)
+            self.__push()
+            self.__empty = True
+        else:
+            self.__buffer.write(char)
+
+    def __push(self) -> None:
+        """Empty buffer into the sink."""
+        self.sink.write(self.__buffer.getvalue())
+        self.__buffer = StringIO()
+
+    def flush(self) -> None:
+        self.__push()
+        self.sink.flush()
+
+    def __enter__(self) -> 'PrefixedSink':
         self.sink.__enter__()
+        return self
 
     def __exit__(self, t, v, tb):
+        if not self.__empty:
+            self.__buffer.write(self.suffix)
+        self.__push()
         self.sink.__exit__(t, v, tb)
