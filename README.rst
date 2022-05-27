@@ -139,6 +139,11 @@ Arguments
     If specified, print version number and exit.
 
 
+Processing Multiple Subjects
+----------------------------
+
+Starting from ``pl-fshack`` version 1.3.0, when there exists subdirectories within the input directory, where each subdirectory contains subject data, the ``pl-fshack`` program interprets its arguments per-subject subdirectory and each subject is processed in parallel. The maximum number of concurrent subprocesses is limited to the number of logical CPUs visible to the container.
+
 Run
 ----
 
