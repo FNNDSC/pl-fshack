@@ -15,9 +15,11 @@ import  sys
 import  asyncio
 import  glob
 import  copy
+import  itertools
 from argparse import Namespace
 from typing import Iterator, TextIO
 from pathlib import Path
+from colorama import Fore
 from chris_plugin import PathMapper
 from fshack._output import PrefixedSink, MultiSink
 
@@ -159,6 +161,15 @@ Gstr_synopsis = """
 
 MAX_CONCURRENT_JOBS = len(os.sched_getaffinity(0))
 sem = asyncio.Semaphore(MAX_CONCURRENT_JOBS)
+
+COLORS = itertools.cycle([
+    Fore.RED,
+    Fore.GREEN,
+    Fore.YELLOW,
+    Fore.BLUE,
+    Fore.MAGENTA,
+    Fore.CYAN
+])
 
 
 class Fshack(ChrisApp):
@@ -332,16 +343,22 @@ class Fshack(ChrisApp):
 
         In the special case where there are no subdirectories of ``options.inputdir``,
         ``options`` is returned as-is.
+
+        Additionally, a ``display_prefix`` field is set on the produced ``options`` which
+        color-codes the output per-subject.
         """
-        mapper = PathMapper.dir_mapper_deep(Path(options.inputdir), Path(options.outputdir))
+        input_dir = Path(options.inputdir)
+        output_dir = Path(options.outputdir)
+        mapper = PathMapper.dir_mapper_deep(input_dir, output_dir)
         if mapper.is_empty():
             print('WARNING: mapper is empty, assuming base')
             yield options
             return
         for sub_input, sub_output in mapper:
             options_copy = copy.copy(options)
-            options_copy.inputdir = sub_input
-            options_copy.outputdir = sub_output
+            options_copy.inputdir = str(sub_input)
+            options_copy.outputdir = str(sub_output)
+            options_copy.display_prefix = f"{next(COLORS)}({sub_input.relative_to(input_dir)})"
             yield options_copy
 
     async def process_subject(self, options: Namespace) -> int:
@@ -361,11 +378,11 @@ class Fshack(ChrisApp):
         # and post-run stderr
         os.mkdir(options.outputdir)
         m_stdout = MultiSink((
-            PrefixedSink(sys.stdout, prefix=f"({options.inputFile})", suffix=""),
+            PrefixedSink(sys.stdout, prefix=options.display_prefix, suffix=Fore.RESET),
             open(f'{options.outputdir}/{options.outputFile}-stdout', 'w')
         ))
         m_stderr = MultiSink((
-            PrefixedSink(sys.stderr, prefix=f"({options.inputFile})", suffix=""),
+            PrefixedSink(sys.stderr, prefix=options.display_prefix, suffix=Fore.RESET),
             open(f'{options.outputdir}/{options.outputFile}-stderr', 'w')
         ))
         with m_stdout as stdout, m_stderr as stderr:
