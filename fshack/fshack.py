@@ -2,7 +2,7 @@
 #
 # fshack DS ChRIS plugin app
 #
-# (c) 2016-2020 Fetal-Neonatal Neuroimaging & Developmental Science Center
+# (c) 2016-2022 Fetal-Neonatal Neuroimaging & Developmental Science Center
 #                   Boston Children's Hospital
 #
 #              http://childrenshospital.org/FNNDSC/
@@ -241,7 +241,7 @@ class Fshack(ChrisApp):
 
     async def job_run(self, str_cmd, stdout, stderr, subjects_dir: str) -> int:
         """
-        Run a command, redirecting its output to any number of output streams.
+        Run a command, redirecting its output to file-like objects which support ``write``.
 
         :param str_cmd: command to run
         :param stdout: writable file-like object
@@ -292,6 +292,12 @@ class Fshack(ChrisApp):
         sys.exit(rc)
 
     async def __run_all(self, options) -> int:
+        """
+        Process every subject in the input directory in parallel.
+
+        :return: if any subprocesses end with a non-zero exit code, an arbitrary non-zero exit code
+                 is returned. Otherwise, ``0`` is returned.
+        """
         subjects = self.map_inputs(options)
         results = await asyncio.gather(*(self.process_subject(subject) for subject in subjects))
         for bad_rc in filter(lambda rc: rc != 0, results):
@@ -363,13 +369,18 @@ class Fshack(ChrisApp):
 
     async def process_subject(self, options: Namespace) -> int:
         """
-        Run the selected fshack program.
+        Run the selected fshack program, while redirecting stdout and stderr to both
+        the current process' stdout and stderr ("console" output) as well as "log"
+        files in the output directory.
 
-        Consumes and mutates options.
+        The "terminal" output is prefixed by ``options.display_prefix``, which should be
+        set by ``map_inputs`` to color-code the line and also with a subject identification.
 
-        Returns exit code.
+        The ``options`` parameter is mutated.
 
         This method uses the global ``sem`` object to restrict the number of parallel subprocesses.
+
+        :return: the program's exit code.
         """
         options.inputFile = self.inputFileSpec_parse(options)
 
@@ -402,6 +413,7 @@ class Fshack(ChrisApp):
 
 
 async def _handle(source: asyncio.StreamReader, sink: TextIO):
+    """Stream bytes one-by-one from an async source to a sync sink until EOF."""
     while len(data := await source.read(1)) == 1:
         sink.write(data.decode(encoding='utf-8'))
 
