@@ -15,6 +15,11 @@ import  sys
 import  subprocess
 import  glob
 import  time
+import  copy
+from argparse import Namespace
+from typing import Iterator
+from pathlib import Path
+from chris_plugin import PathMapper
 from fshack._output import PrefixedSink, MultiSink
 
 sys.path.append(os.path.dirname(__file__))
@@ -167,7 +172,7 @@ class Fshack(ChrisApp):
     CATEGORY                = ''
     TYPE                    = 'ds'
     DOCUMENTATION           = 'https://github.com/FNNDSC/pl-fshack'
-    VERSION                 = '1.2.0'
+    VERSION                 = '1.3.0'
     ICON                    = ''  # url of an icon image
     LICENSE                 = 'Opensource (MIT)'
     MAX_NUMBER_OF_WORKERS   = 1  # Override with integer value
@@ -221,7 +226,7 @@ class Fshack(ChrisApp):
                           optional  = True,
                           default   = "run")
 
-    def job_run(self, str_cmd, stdout, stderr) -> int:
+    def job_run(self, str_cmd, stdout, stderr, subjects_dir: str) -> int:
         """
         Run a command, redirecting its output to any number of output streams.
         Output is polled for every 2 seconds and written to the given handles.
@@ -229,11 +234,12 @@ class Fshack(ChrisApp):
         :param str_cmd: command to run
         :param stdout: writable file-like object
         :param stderr: writable file-like object
+        :param subjects_dir: value for ``SUBJECTS_DIR`` environment variable
         :return: subprocess exit code
         """
 
         localEnv    = os.environ.copy()
-        localEnv["SUBJECTS_DIR"] = self.options.outputdir
+        localEnv["SUBJECTS_DIR"] = subjects_dir
         p = subprocess.Popen(
                     str_cmd.split(),
                     stdout      = subprocess.PIPE,
@@ -248,7 +254,6 @@ class Fshack(ChrisApp):
             stdout.write(p.stdout.read())
             stderr.write(p.stderr.read())
             time.sleep(2.0)
-
         # flush remaining output in case poll finishes very fast
         stdout.write(p.stdout.read())
         stderr.write(p.stderr.read())
@@ -283,28 +288,11 @@ class Fshack(ChrisApp):
         print('Version: %s' % self.get_version())
         for k,v in options.__dict__.items():
             print("%20s:  -->%s<--" % (k, v))
-        self.options    = options
 
-        options.inputFile = self.inputFileSpec_parse(options)
-
-        str_cmd = self.create_cmd(options)
-        # Run the job and provide realtime stdout
-        # and post-run stderr
-        m_stdout = MultiSink((
-            PrefixedSink(sys.stdout, f"({options.inputFile})"),
-            open(f'{options.outputdir}/{options.outputFile}-stdout', 'w')
-        ))
-        m_stderr = MultiSink((
-            PrefixedSink(sys.stderr, f"({options.inputFile})"),
-            open(f'{options.outputdir}/{options.outputFile}-stderr', 'w')
-        ))
-        with m_stdout as stdout, m_stderr as stderr:
-            rc = self.job_run(str_cmd, stdout, stderr)
-
-        with open(f'{options.outputdir}/{options.outputFile}-returncode', 'w') as rc_file:
-            rc_file.write(str(rc))
-
-        sys.exit(rc)
+        for subject in self.map_inputs(options):
+            rc = self.process_subject(subject)
+            if rc != 0:
+                sys.exit(rc)
 
     def create_cmd(self, options) -> str:
         """
@@ -343,6 +331,56 @@ class Fshack(ChrisApp):
                        str_args)
 
         return str_cmd
+
+    def map_inputs(self, options: Namespace) -> Iterator[Namespace]:
+        """
+        Generates plugin instance options objects where ``inputdir`` and ``outputdir``
+        are changed to be subdirectories of the given ``options.inputdir`` and ``options.outputdir``.
+
+        In the special case where there are no subdirectories of ``options.inputdir``,
+        ``options`` is returned as-is.
+        """
+        mapper = PathMapper.dir_mapper_deep(Path(options.inputdir), Path(options.outputdir))
+        print(mapper)
+        if mapper.is_empty():
+            print('WARNING: mapper is empty, assuming base')
+            yield options
+            return
+        for sub_input, sub_output in mapper:
+            options_copy = copy.copy(options)
+            options_copy.inputdir = sub_input
+            options_copy.outputdir = sub_output
+            yield options_copy
+
+    def process_subject(self, options: Namespace) -> int:
+        """
+        Run the selected fshack program.
+
+        Consumes and mutates options.
+
+        Returns exit code.
+        """
+        options.inputFile = self.inputFileSpec_parse(options)
+
+        str_cmd = self.create_cmd(options)
+        # Run the job and provide realtime stdout
+        # and post-run stderr
+        os.mkdir(options.outputdir)
+        m_stdout = MultiSink((
+            PrefixedSink(sys.stdout, f"({options.inputFile})"),
+            open(f'{options.outputdir}/{options.outputFile}-stdout', 'w')
+        ))
+        m_stderr = MultiSink((
+            PrefixedSink(sys.stderr, f"({options.inputFile})"),
+            open(f'{options.outputdir}/{options.outputFile}-stderr', 'w')
+        ))
+        with m_stdout as stdout, m_stderr as stderr:
+            rc = self.job_run(str_cmd, stdout, stderr, options.outputdir)
+
+        with open(f'{options.outputdir}/{options.outputFile}-returncode', 'w') as rc_file:
+            rc_file.write(str(rc))
+
+        return rc
 
     def show_man_page(self):
         """

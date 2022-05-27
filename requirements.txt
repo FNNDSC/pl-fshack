@@ -1,2 +1,3 @@
 chrisapp
 pudb
+chris_plugin==0.0.17

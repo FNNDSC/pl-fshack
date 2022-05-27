@@ -4,8 +4,8 @@ import os
 
 
 # Make sure we are running python3.5+
-if 10 * sys.version_info[0] + sys.version_info[1] < 35:
-    sys.exit("Sorry, only Python 3.5+ is supported.")
+if 10 * sys.version_info[0] + sys.version_info[1] < 38:
+    sys.exit("Sorry, only Python 3.8+ is supported.")
 
 
 from setuptools import setup
@@ -21,7 +21,7 @@ setup(
       name             =   'fshack',
       # for best practices make this version the same as the VERSION class variable
       # defined in your ChrisApp-derived Python class
-      version          =   '1.2.3',
+      version          =   '1.3.0',
       description      =   'A containerized FreeSurfer, with several modes of operation accessible via specific CLI patterning',
       long_description =   readme(),
       author           =   'FNNDSC',
