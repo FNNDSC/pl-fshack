@@ -65,4 +65,10 @@ ENV PATH="/usr/local/freesurfer/bin:/usr/local/freesurfer/fsfast/bin:/usr/local/
     MNI_DIR="/usr/local/freesurfer/mni"                     \
     FSF_OUTPUT_FORMAT="nii.gz"
 
+# duct tape programming
+WORKDIR /usr/local/src/pl-fshack
+COPY . .
+RUN pip install .
+WORKDIR $APPROOT
+
 CMD ["fshack.py", "--help"]

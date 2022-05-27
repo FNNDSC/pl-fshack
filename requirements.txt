@@ -1,2 +1,4 @@
 chrisapp
 pudb
+chris_plugin==0.0.17
+colorama~=0.4.4

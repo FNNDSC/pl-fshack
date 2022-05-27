@@ -2,7 +2,7 @@
 #
 # fshack DS ChRIS plugin app
 #
-# (c) 2016-2020 Fetal-Neonatal Neuroimaging & Developmental Science Center
+# (c) 2016-2022 Fetal-Neonatal Neuroimaging & Developmental Science Center
 #                   Boston Children's Hospital
 #
 #              http://childrenshospital.org/FNNDSC/
@@ -12,8 +12,16 @@
 
 import  os
 import  sys
-import  subprocess
+import  asyncio
 import  glob
+import  copy
+import  itertools
+from argparse import Namespace
+from typing import Iterator, TextIO
+from pathlib import Path
+from colorama import Fore
+from chris_plugin import PathMapper
+from _output import PrefixedSink, MultiSink
 
 sys.path.append(os.path.dirname(__file__))
 
@@ -151,6 +159,18 @@ Gstr_synopsis = """
 
 """
 
+MAX_CONCURRENT_JOBS = len(os.sched_getaffinity(0))
+sem = asyncio.Semaphore(MAX_CONCURRENT_JOBS)
+
+COLORS = itertools.cycle([
+    Fore.RED,
+    Fore.GREEN,
+    Fore.YELLOW,
+    Fore.BLUE,
+    Fore.MAGENTA,
+    Fore.CYAN
+])
+
 
 class Fshack(ChrisApp):
     DESCRIPTION  = '''
@@ -165,7 +185,7 @@ class Fshack(ChrisApp):
     CATEGORY                = ''
     TYPE                    = 'ds'
     DOCUMENTATION           = 'https://github.com/FNNDSC/pl-fshack'
-    VERSION                 = '1.2.0'
+    VERSION                 = '1.3.0'
     ICON                    = ''  # url of an icon image
     LICENSE                 = 'Opensource (MIT)'
     MAX_NUMBER_OF_WORKERS   = 1  # Override with integer value
@@ -219,68 +239,25 @@ class Fshack(ChrisApp):
                           optional  = True,
                           default   = "run")
 
-    def job_run(self, str_cmd):
+    async def job_run(self, str_cmd, stdout, stderr, subjects_dir: str) -> int:
         """
-        Running some CLI process via python is cumbersome. The typical/easy
-        path of
+        Run a command, redirecting its output to file-like objects which support ``write``.
 
-                            os.system(str_cmd)
-
-        is deprecated and prone to hidden complexity. The preferred
-        method is via subprocess, which has a cumbersome processing
-        syntax. Still, this method runs the `str_cmd` and returns the
-        stderr and stdout strings as well as a returncode.
-
-        Providing readtime output of both stdout and stderr seems
-        problematic. The approach here is to provide realtime
-        output on stdout and only provide stderr on process completion.
-
+        :param str_cmd: command to run
+        :param stdout: writable file-like object
+        :param stderr: writable file-like object
+        :param subjects_dir: value for ``SUBJECTS_DIR`` environment variable
+        :return: subprocess exit code
         """
-        d_ret = {
-            'stdout':       "",
-            'stderr':       "",
-            'returncode':   0
-        }
 
         localEnv    = os.environ.copy()
-        localEnv["SUBJECTS_DIR"] = self.options.outputdir
-        p = subprocess.Popen(
-                    str_cmd.split(),
-                    stdout      = subprocess.PIPE,
-                    stderr      = subprocess.PIPE,
-                    env         = localEnv
-                    )
-
-        # Realtime output on stdout
-        str_stdoutLine  = ""
-        str_stdout      = ""
-        while True:
-            stdout      = p.stdout.readline()
-            if p.poll() is not None:
-                break
-            if stdout:
-                str_stdoutLine = stdout.decode()
-                print(str_stdoutLine, end = '')
-                str_stdout      += str_stdoutLine
-        d_ret['stdout']     = str_stdout
-        d_ret['stderr']     = p.stderr.read().decode()
-        d_ret['returncode'] = p.returncode
-        print('\nstderr: \n%s' % d_ret['stderr'])
-        return d_ret
-
-    def job_stdwrite(self, d_job, options):
-        """
-        Capture the d_job entries to respective files.
-        """
-        for key in d_job.keys():
-            with open(
-                '%s/%s-%s' % (options.outputdir, options.outputFile, key), "w"
-            ) as f:
-                f.write(str(d_job[key]))
-                f.close()
-        return {
-            'status': True
-        }
+        localEnv["SUBJECTS_DIR"] = subjects_dir
+        process = await asyncio.create_subprocess_shell(str_cmd, env=localEnv,
+                                                        stdout=asyncio.subprocess.PIPE,
+                                                        stderr=asyncio.subprocess.PIPE)
+        await asyncio.gather(_handle(process.stdout, stdout), _handle(process.stderr, stderr))
+        await process.wait()
+        return process.returncode
 
     def inputFileSpec_parse(self, options):
         """
@@ -288,8 +265,6 @@ class Fshack(ChrisApp):
         behaviour. Specifically, if the inputFile spec starts with a
         period, '.', then search the inputDir for the first file with
         that substring and assign that file as inputFile.
-
-        Modify the options variable in place.
         """
         str_thisDir:    str     = ''
         str_pattern:    str     = ''
@@ -300,23 +275,39 @@ class Fshack(ChrisApp):
             os.chdir(options.inputdir)
             l_files         = glob.glob('*' + str_pattern + '*')
             if len(l_files):
-                options.inputFile = l_files[0]
+                return l_files[0]
             os.chdir(str_thisDir)
+        return options.inputFile
 
     def run(self, options):
         """
         Define the code to be run by this plugin app.
         """
-        global str_cmd
         print(Gstr_title)
         print('Version: %s' % self.get_version())
         for k,v in options.__dict__.items():
             print("%20s:  -->%s<--" % (k, v))
-        self.options    = options
 
-        self.inputFileSpec_parse(options)
+        rc = asyncio.run(self.__run_all(options))
+        sys.exit(rc)
 
-        str_args    = ""
+    async def __run_all(self, options) -> int:
+        """
+        Process every subject in the input directory in parallel.
+
+        :return: if any subprocesses end with a non-zero exit code, an arbitrary non-zero exit code
+                 is returned. Otherwise, ``0`` is returned.
+        """
+        subjects = self.map_inputs(options)
+        results = await asyncio.gather(*(self.process_subject(subject) for subject in subjects))
+        for bad_rc in filter(lambda rc: rc != 0, results):
+            return bad_rc
+        return 0
+
+    def create_cmd(self, options) -> str:
+        """
+        Complicated behavior that I moved into a helper method for the sake of hiding it.
+        """
         l_appargs   = options.args.split('ARGS:')
         if len(l_appargs) == 2:
             str_args = l_appargs[1]
@@ -349,17 +340,83 @@ class Fshack(ChrisApp):
                        options.exec, options.inputdir, options.inputFile,
                        str_args)
 
+        return str_cmd
+
+    def map_inputs(self, options: Namespace) -> Iterator[Namespace]:
+        """
+        Generates plugin instance options objects where ``inputdir`` and ``outputdir``
+        are changed to be subdirectories of the given ``options.inputdir`` and ``options.outputdir``.
+
+        In the special case where there are no subdirectories of ``options.inputdir``,
+        ``options`` is returned as-is.
+
+        Additionally, a ``display_prefix`` field is set on the produced ``options`` which
+        color-codes the output per-subject.
+        """
+        input_dir = Path(options.inputdir)
+        output_dir = Path(options.outputdir)
+        mapper = PathMapper.dir_mapper_deep(input_dir, output_dir)
+        if mapper.is_empty():
+            print('WARNING: mapper is empty, assuming base')
+            options.display_prefix = ''
+            yield options
+            return
+        for sub_input, sub_output in mapper:
+            options_copy = copy.copy(options)
+            options_copy.inputdir = str(sub_input)
+            options_copy.outputdir = str(sub_output)
+            options_copy.display_prefix = f"{next(COLORS)}({sub_input.relative_to(input_dir)})"
+            yield options_copy
+
+    async def process_subject(self, options: Namespace) -> int:
+        """
+        Run the selected fshack program, while redirecting stdout and stderr to both
+        the current process' stdout and stderr ("console" output) as well as "log"
+        files in the output directory.
+
+        The "terminal" output is prefixed by ``options.display_prefix``, which should be
+        set by ``map_inputs`` to color-code the line and also with a subject identification.
+
+        The ``options`` parameter is mutated.
+
+        This method uses the global ``sem`` object to restrict the number of parallel subprocesses.
+
+        :return: the program's exit code.
+        """
+        options.inputFile = self.inputFileSpec_parse(options)
+
+        str_cmd = self.create_cmd(options)
         # Run the job and provide realtime stdout
         # and post-run stderr
-        self.job_stdwrite(
-            self.job_run(str_cmd), options
-        )
+        os.makedirs(options.outputdir, exist_ok=True)
+        m_stdout = MultiSink((
+            PrefixedSink(sys.stdout, prefix=options.display_prefix, suffix=Fore.RESET),
+            open(f'{options.outputdir}/{options.outputFile}-stdout', 'w')
+        ))
+        m_stderr = MultiSink((
+            PrefixedSink(sys.stderr, prefix=options.display_prefix, suffix=Fore.RESET),
+            open(f'{options.outputdir}/{options.outputFile}-stderr', 'w')
+        ))
+        with m_stdout as stdout, m_stderr as stderr:
+            async with sem:
+                rc = await self.job_run(str_cmd, stdout, stderr, options.outputdir)
+
+        with open(f'{options.outputdir}/{options.outputFile}-returncode', 'w') as rc_file:
+            rc_file.write(str(rc))
+
+        return rc
 
     def show_man_page(self):
         """
         Print the app's man page.
         """
         print(Gstr_synopsis)
+
+
+async def _handle(source: asyncio.StreamReader, sink: TextIO):
+    """Stream bytes one-by-one from an async source to a sync sink until EOF."""
+    while len(data := await source.read(1)) == 1:
+        sink.write(data.decode(encoding='utf-8'))
 
 
 # ENTRYPOINT
