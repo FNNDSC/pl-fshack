@@ -238,6 +238,12 @@ class Fshack(ChrisApp):
                           dest      = 'outputFile',
                           optional  = True,
                           default   = "run")
+        self.add_argument("-F", "--no-fail",
+                          help="ignore return code of FS subprocesses and always produce a 0 exit code",
+                          type=bool,
+                          dest='no_fail',
+                          optional=True,
+                          default=False)
 
     async def job_run(self, str_cmd, stdout, stderr, subjects_dir: str) -> int:
         """
@@ -289,7 +295,8 @@ class Fshack(ChrisApp):
             print("%20s:  -->%s<--" % (k, v))
 
         rc = asyncio.run(self.__run_all(options))
-        sys.exit(rc)
+        if not options.no_fail:
+            sys.exit(rc)
 
     async def __run_all(self, options) -> int:
         """
