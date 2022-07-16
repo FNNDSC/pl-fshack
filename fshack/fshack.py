@@ -21,9 +21,9 @@ from typing import Iterator, TextIO
 from pathlib import Path
 from colorama import Fore
 from chris_plugin import PathMapper
-from _output import PrefixedSink, MultiSink
 
 sys.path.append(os.path.dirname(__file__))
+from _output import PrefixedSink, MultiSink  # noqa
 
 # import the Chris app superclass
 from    chrisapp.base import ChrisApp
