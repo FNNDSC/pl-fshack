@@ -122,12 +122,17 @@ jobs:
           docker run --rm $dock_image $script --json > /tmp/description.json
           jq < /tmp/description.json  # print in log
           echo "::set-output name=title::$(jq -r '.title' <<< "$json")"
+
       - name: Upload to ChRIS Store
         if: "!endsWith(steps.determine.outputs.dock_image, ':latest')"
-        uses: FNNDSC/chrisstore-action@master
+        uses: FNNDSC/chrisstore-action@v1.1.0
         with:
           descriptor_file: /tmp/description.json
           auth: ${{ secrets.CHRIS_STORE_USER }}
+          chris_admin_auth: ${{ secrets.CUBE_CHRISPROJECT_ORG_ADMIN_USER }}
+          chris_admin_url: https://cube.chrisproject.org/chris-admin/api/v1/
+          compute_resources: galena
+
       - name: Update DockerHub description
         uses: peter-evans/dockerhub-description@v2
         continue-on-error: true  # it is not crucial that this works
