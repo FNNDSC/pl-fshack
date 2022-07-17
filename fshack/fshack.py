@@ -160,9 +160,6 @@ Gstr_synopsis = """
 
 """
 
-MAX_CONCURRENT_JOBS = len(os.sched_getaffinity(0))
-sem = asyncio.Semaphore(MAX_CONCURRENT_JOBS)
-
 COLORS = itertools.cycle([
     Fore.RED,
     Fore.GREEN,
@@ -192,9 +189,9 @@ class Fshack(ChrisApp):
     MAX_NUMBER_OF_WORKERS   = 1  # Override with integer value
     MIN_NUMBER_OF_WORKERS   = 1  # Override with integer value
     MAX_CPU_LIMIT           = ''  # Override with millicore value as string, e.g. '2000m'
-    MIN_CPU_LIMIT           = '2000m'  # Override with millicore value as string, e.g. '2000m'
+    MIN_CPU_LIMIT           = '3000m'  # Override with millicore value as string, e.g. '2000m'
     MAX_MEMORY_LIMIT        = ''  # Override with string, e.g. '1Gi', '2000Mi'
-    MIN_MEMORY_LIMIT        = '2000Mi'  # Override with string, e.g. '1Gi', '2000Mi'
+    MIN_MEMORY_LIMIT        = '30Gi'  # Override with string, e.g. '1Gi', '2000Mi'
     MIN_GPU_LIMIT           = 0  # Override with the minimum number of GPUs, as an integer, for your plugin
     MAX_GPU_LIMIT           = 0  # Override with the maximum number of GPUs, as an integer, for your plugin
 
@@ -245,6 +242,19 @@ class Fshack(ChrisApp):
                           dest      = 'no_fail',
                           optional  = True,
                           default   = False)
+        self.add_argument("-t", "--threads",
+                          help      = "maximum number of parallel FS programs to run simultaneously. "
+                                      "The special value 0 means to automatically optimize based on "
+                                      "available CPU and memory.",
+                          type      = int,
+                          dest      = 'threads',
+                          optional  = True,
+                          default   = 3)
+        # https://surfer.nmr.mgh.harvard.edu/fswiki/SystemRequirements
+        #
+        # FreeSurfer recommends 8GB memory.
+        # We hard-code the defaults to ask for 3 concurrent jobs,
+        # min_memory_limit=30GiB
 
     async def job_run(self, str_cmd, stdout, stderr, subjects_dir: str) -> int:
         """
@@ -295,9 +305,12 @@ class Fshack(ChrisApp):
         for k,v in options.__dict__.items():
             print("%20s:  -->%s<--" % (k, v))
 
+        self.sem = asyncio.Semaphore(options.threads)
+
         rc = asyncio.run(self.__run_all(options))
         if not options.no_fail:
             sys.exit(rc)
+
 
     async def __run_all(self, options) -> int:
         """
@@ -387,7 +400,7 @@ class Fshack(ChrisApp):
 
         The ``options`` parameter is mutated.
 
-        This method uses the global ``sem`` object to restrict the number of parallel subprocesses.
+        This method uses this object's ``self.sem`` to restrict the number of parallel subprocesses.
 
         :return: the program's exit code.
         """
@@ -406,7 +419,7 @@ class Fshack(ChrisApp):
             open(f'{options.outputdir}/{options.outputFile}-stderr', 'w')
         ))
         with m_stdout as stdout, m_stderr as stderr:
-            async with sem:
+            async with self.sem:
                 rc = await self.job_run(str_cmd, stdout, stderr, options.outputdir)
 
         with open(f'{options.outputdir}/{options.outputFile}-returncode', 'w') as rc_file:
