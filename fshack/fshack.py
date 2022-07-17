@@ -23,6 +23,7 @@ from colorama import Fore
 from chris_plugin import PathMapper
 
 sys.path.append(os.path.dirname(__file__))
+sys.path.append('/usr/src/fshack')  # duct-tape programming
 from _output import PrefixedSink, MultiSink  # noqa
 
 # import the Chris app superclass
@@ -185,7 +186,7 @@ class Fshack(ChrisApp):
     CATEGORY                = ''
     TYPE                    = 'ds'
     DOCUMENTATION           = 'https://github.com/FNNDSC/pl-fshack'
-    VERSION                 = '1.4.0'
+    VERSION                 = '1.4.1'
     ICON                    = ''  # url of an icon image
     LICENSE                 = 'Opensource (MIT)'
     MAX_NUMBER_OF_WORKERS   = 1  # Override with integer value
@@ -239,11 +240,11 @@ class Fshack(ChrisApp):
                           optional  = True,
                           default   = "run")
         self.add_argument("-F", "--no-fail",
-                          help="ignore return code of FS subprocesses and always produce a 0 exit code",
-                          type=bool,
-                          dest='no_fail',
-                          optional=True,
-                          default=False)
+                          help      = "ignore return code of FS subprocesses and always produce a 0 exit code",
+                          type      = bool,
+                          dest      = 'no_fail',
+                          optional  = True,
+                          default   = False)
 
     async def job_run(self, str_cmd, stdout, stderr, subjects_dir: str) -> int:
         """
