@@ -48,6 +48,9 @@ class PrefixedSink(ContextManager['PrefixedSink']):
 
     Text is only written to the underlying sink when a line is complete, i.e. after
     '\n' is received, or when the ``flush`` method is called.
+
+    Use ``PrefixedSink`` as a context manager to ensure that its output gets flushed.
+    Note that its ``sink`` is not closed when this ``PrefixSink`` is closed.
     """
     sink: TextIO
     """Output stream"""
@@ -89,11 +92,9 @@ class PrefixedSink(ContextManager['PrefixedSink']):
         self.sink.flush()
 
     def __enter__(self) -> 'PrefixedSink':
-        self.sink.__enter__()
         return self
 
     def __exit__(self, t, v, tb):
         if not self.__empty:
             self.__buffer.write(self.suffix)
         self.__push()
-        self.sink.__exit__(t, v, tb)
