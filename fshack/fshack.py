@@ -305,8 +305,6 @@ class Fshack(ChrisApp):
         for k,v in options.__dict__.items():
             print("%20s:  -->%s<--" % (k, v))
 
-        self.sem = asyncio.Semaphore(options.threads)
-
         rc = asyncio.run(self.__run_all(options))
         if not options.no_fail:
             sys.exit(rc)
@@ -319,6 +317,7 @@ class Fshack(ChrisApp):
         :return: if any subprocesses end with a non-zero exit code, an arbitrary non-zero exit code
                  is returned. Otherwise, ``0`` is returned.
         """
+        self.sem = asyncio.Semaphore(options.threads)
         subjects = self.map_inputs(options)
         results = await asyncio.gather(*(self.process_subject(subject) for subject in subjects))
         for bad_rc in filter(lambda rc: rc != 0, results):
