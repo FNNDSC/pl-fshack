@@ -24,8 +24,8 @@
 
 
 
-FROM fnndsc/ubuntu-python3:latest
-# FROM fnndsc/centos-python3:latest
+#FROM fnndsc/ubuntu-python3:latest
+FROM fnndsc/ubuntu-python3@sha256:612b88b00d167c28a2bff5d7759f99112a5987463683362cd87d2e4c1726183d
 LABEL maintainer="dev@babymri.org"
 
 ARG UID=1001
@@ -35,11 +35,12 @@ COPY ["fshack/", "requirements.txt", "license.txt", "${APPROOT}/"]
 
 WORKDIR $APPROOT
 
+ARG FREESURFER_VERSION=7.3.1
 RUN pip install -r requirements.txt                         \
     && apt-get update -q &&                                 \
     apt-get -qq install bc binutils libgomp1 perl psmisc curl tar tcsh uuid-dev vim-common libjpeg62-dev \
     libglu1-mesa libxmu6 libglib2.0-0 qt5-default &&        \
-    curl https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/7.1.0/freesurfer-linux-centos8_x86_64-7.1.0.tar.gz | \
+    curl "https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/${FREESURFER_VERSION}/freesurfer-linux-ubuntu20_$(uname -p)-${FREESURFER_VERSION}.tar.gz" | \
     tar -C /usr/local -xz                                   \
     && mv license.txt /usr/local/freesurfer                 \
     && apt-get install -y locales                           \
