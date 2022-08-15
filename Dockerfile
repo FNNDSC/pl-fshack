@@ -35,12 +35,12 @@ COPY ["fshack/", "requirements.txt", "license.txt", "${APPROOT}/"]
 
 WORKDIR $APPROOT
 
-ARG FREESURFER_VERSION=7.3.1
+ARG FREESURFER_VERSION=7.3.2
 RUN pip install -r requirements.txt                         \
     && apt-get update -q &&                                 \
     apt-get -qq install bc binutils libgomp1 perl psmisc curl tar tcsh uuid-dev vim-common libjpeg62-dev \
     libglu1-mesa libxmu6 libglib2.0-0 qt5-default &&        \
-    curl "https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/${FREESURFER_VERSION}/freesurfer-linux-ubuntu20_$(uname -p)-${FREESURFER_VERSION}.tar.gz" | \
+    curl "https://surfer.nmr.mgh.harvard.edu/pub/dist/freesurfer/${FREESURFER_VERSION}/freesurfer-linux-ubuntu20_$(dpkg --print-architecture)-${FREESURFER_VERSION}.tar.gz" | \
     tar -C /usr/local -xz                                   \
     && mv license.txt /usr/local/freesurfer                 \
     && apt-get install -y locales                           \
