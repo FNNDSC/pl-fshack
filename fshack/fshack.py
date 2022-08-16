@@ -183,7 +183,7 @@ class Fshack(ChrisApp):
     CATEGORY                = ''
     TYPE                    = 'ds'
     DOCUMENTATION           = 'https://github.com/FNNDSC/pl-fshack'
-    VERSION                 = '1.4.3'
+    VERSION                 = '1.4.4'
     ICON                    = ''  # url of an icon image
     LICENSE                 = 'Opensource (MIT)'
     MAX_NUMBER_OF_WORKERS   = 1  # Override with integer value
@@ -191,7 +191,7 @@ class Fshack(ChrisApp):
     MAX_CPU_LIMIT           = ''  # Override with millicore value as string, e.g. '2000m'
     MIN_CPU_LIMIT           = '3000m'  # Override with millicore value as string, e.g. '2000m'
     MAX_MEMORY_LIMIT        = ''  # Override with string, e.g. '1Gi', '2000Mi'
-    MIN_MEMORY_LIMIT        = '30Gi'  # Override with string, e.g. '1Gi', '2000Mi'
+    MIN_MEMORY_LIMIT        = '16Gi'  # Override with string, e.g. '1Gi', '2000Mi'
     MIN_GPU_LIMIT           = 0  # Override with the minimum number of GPUs, as an integer, for your plugin
     MAX_GPU_LIMIT           = 0  # Override with the maximum number of GPUs, as an integer, for your plugin
 
