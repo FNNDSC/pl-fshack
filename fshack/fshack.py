@@ -343,7 +343,7 @@ class Fshack(ChrisApp):
                        options.outputdir, options.outputFile, str_args)
 
         if options.exec == 'mri_convert':
-            str_cmd = '%s/%s %s/%s  %s/%s %s ' % \
+            str_cmd = '%s/%s -i %s/%s  -o %s/%s %s ' % \
                       (str_FSbinDir,
                        options.exec, options.inputdir, options.inputFile,
                        options.outputdir, options.outputFile, str_args)
