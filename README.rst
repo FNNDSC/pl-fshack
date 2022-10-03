@@ -168,11 +168,11 @@ Pull DICOM
 
 - Clone this repository (``SAG-anon``) to your local computer.
 
-::
+.. code::
 
     git clone https://github.com/FNNDSC/SAG-anon.git
 
-- Make sure the ``SAG-anon`` directory is placed in the ``data`` subdirectory of the ``devel`` directory (you should be there already if you are following along). This plugin assumes that data to be processed exists in _sub-directories_ of the input direcory. Data to be processed must *not* be in directly in the input directory itself.
+- Make sure the ``SAG-anon`` directory is placed in the ``data`` subdirectory of the ``devel`` directory (you should be there already if you are following along). This plugin assumes that data to be processed exists in _sub-directories_ of the input direcory. Data to be processed must *not* be in directly in the input directory itself. Any data that is directly in the input directory folder will *not* be picked up for processing!
 
 Pull NIFTI
 ~~~~~~~~~~
@@ -181,18 +181,18 @@ Pull NIFTI
 
 - Clone this repository (``SAG-anon-nii``) to your local computer.
 
-::
+.. code::
 
     git clone https://github.com/FNNDSC/SAG-anon-nii.git
 
-- Make sure the ``SAG-anon-nii`` directory is placed in the ``devel`` directory.
+- Make sure the ``SAG-anon-nii`` directory is placed in the ``devel/data`` directory.
 
 Using ``docker run``
 ~~~~~~~~~~~~~~~~~~~~
 
 To run using ``docker``, be sure to assign an "input" directory to ``/incoming`` and an output directory to ``/outgoing``. *Make sure that the* ``/out`` *directory is world writable!*
 
-- Make sure your current working directory is ``devel``. At this juncture it should contain ``SAG-anon`` and ``SAG-anon-nii``.
+- Make sure your current working directory is ``devel``. At this juncture it should contain ``data/SAG-anon`` and ``data/SAG-anon-nii``.
 
 - Create an output directory named ``results`` in ``devel``.
 
@@ -219,7 +219,7 @@ For ``NifTI`` inputs:
 .. code:: bash
 
     docker run --rm                                                         \
-        -v $DEVEL/SAG-anon-nii/:/incoming -v $DEVEL/results/:/outgoing      \
+        -v $DEVEL/data/:/incoming -v $DEVEL/results/:/outgoing              \
         fnndsc/pl-fshack fshack.py                                          \
         -i SAG-anon.nii                                                     \
         -o recon-of-SAG-anon-nii                                            \
@@ -232,7 +232,7 @@ For ``DICOM`` inputs:
 .. code:: bash
 
     docker run --rm                                                         \
-        -v $DEVEL/SAG-anon-nii/:/incoming -v $DEVEL/results/:/outgoing      \
+        -v $DEVEL/data/:/incoming -v $DEVEL/results/:/outgoing              \
         fnndsc/pl-fshack fshack.py                                          \
         -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
         -o recon-of-SAG-anon-dcm                                            \
@@ -249,18 +249,23 @@ Let's say you want to run ``mri_convert`` and would have executed something like
 
 .. code:: bash
 
+    cd $DEVEL/data/SAG-anon
     mri_convert -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm \
                 -o DCM2NII.nii
+
+The equivalent of using ``docker`` would be:
 
 .. code:: bash
 
     docker run --rm                                                         \
-        -v $DEVEL/SAG-anon/:/incoming -v $DEVEL/results/:/outgoing          \
+        -v $DEVEL/data:/incoming -v $DEVEL/results/:/outgoing          \
         fnndsc/pl-fshack fshack.py                                          \
         --exec mri_convert                                                  \
         -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
         -o DCM2NII.nii                                                      \
         /incoming /outgoing
+
+Notice that the original command is mostly readable directly from just after the text ``--exec`` until the ``/incoming``.
 
 ``mri_info``
 ~~~~~~~~~~~~~
@@ -277,7 +282,7 @@ The results of the below information query are stored in text files
 .. code:: bash
 
     docker run --rm                                                         \
-        -v $DEVEL/SAG-anon/:/incoming -v $DEVEL/results/:/outgoing          \
+        -v $DEVEL/data:/incoming -v $DEVEL/results/:/outgoing          \
         fnndsc/pl-fshack fshack.py                                          \
         -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
         -o info                                                             \
@@ -342,7 +347,7 @@ So, assuming the same env variables as above, and assuming that you are in the s
 
     docker run --rm -ti                                                         \
                -v $PWD/fshack:/usr/src/fshack                                   \
-               -v $DEVEL/SAG-anon/:/incoming                                    \
+               -v $DEVEL/data:/incoming                                    \
                -v $DEVEL/results/:/outgoing                                     \
                fnndsc/pl-fshack fshack.py                                       \
                -i .dcm                                                          \
@@ -356,7 +361,7 @@ or the first stage of ``recon-all``:
 
     docker run --rm -ti                                                         \
                -v $PWD/fshack:/usr/src/fshack                                   \
-               -v $DEVEL/SAG-anon/:/incoming                                    \
+               -v $DEVEL/data:/incoming                                    \
                -v $DEVEL/results/:/outgoing                                     \
                fnndsc/pl-fshack fshack.py                                       \
                -i .dcm                                                          \
