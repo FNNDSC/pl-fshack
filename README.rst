@@ -157,6 +157,7 @@ First, let's create a directory, say ``devel`` where-ever you feel like it. We w
     mkdir devel
     cd devel
     export DEVEL=$PWD
+    mkdir data && cd data
 
 Now, we need to fetch sample data.
 
@@ -171,7 +172,7 @@ Pull DICOM
 
     git clone https://github.com/FNNDSC/SAG-anon.git
 
-- Make sure the ``SAG-anon`` directory is placed in the ``devel`` directory (you should be there already if you are following along)
+- Make sure the ``SAG-anon`` directory is placed in the ``data`` subdirectory of the ``devel`` directory (you should be there already if you are following along). This plugin assumes that data to be processed exists in _sub-directories_ of the input direcory. Data to be processed must *not* be in directly in the input directory itself.
 
 Pull NIFTI
 ~~~~~~~~~~
@@ -243,6 +244,13 @@ NOTE: The ``recon-all`` commands will take multiple hours to run to completion!
 
 ``mri_convert``
 ~~~~~~~~~~~~~~~
+
+Let's say you want to run ``mri_convert`` and would have executed something like:
+
+.. code:: bash
+
+    mri_convert -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm \
+                -o DCM2NII.nii
 
 .. code:: bash
 
