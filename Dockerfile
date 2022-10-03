@@ -21,18 +21,25 @@
 #
 #   docker run -ti -e HOST_IP=$(ip route | grep -v docker | awk '{if(NF==11) print $9}') --entrypoint /bin/bash local/pl-fshack
 #
-# Versions of FreeSurfer post 7.3.1 weigh in at 15GB and exceed build space on Github Actions. To build/push
-# manually, do
+# Versions of FreeSurfer post 7.3.1 weigh in at 15GB and exceed build space on
+# Github Actions. To build/push manually, do
 #
 #    docker tag local/pl-fshack docker.io/fnndsc/pl-fshack:1.4.4
 #    docker push docker.io/fnndsc/pl-fshack:1.4.4
 #
-# obviously changing the 1.4.4 to whatever version number is appropriate. Then, upload to the ChRIS store at 
-# https://chrisstore.co/create
+# obviously changing the 1.4.4 to whatever version number is appropriate. Then,
+# upload to the ChRIS store at https://chrisstore.co/create
 #
 #    docker run --rm docker.io/fnndsc/pl-fshack:1.4.4 fshack.py --json > fshack.json
 #
-
+# either manually via the web ui, or from the CLI
+#
+#    http -a fnndsc:<fnndscpasswd> -f POST https://chrisstore.co/api/v1/plugins/    \
+#    dock_image=fnndsc/pl-fshack                                                    \
+#    descriptor_file@fshack.json                                                    \
+#    public_repo=https://github.com/FNNDSC/pl-fshack                                \
+#    name=pl-fshack
+#
 
 
 #FROM fnndsc/ubuntu-python3:latest
