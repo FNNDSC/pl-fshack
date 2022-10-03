@@ -24,13 +24,13 @@
 # Versions of FreeSurfer post 7.3.1 weigh in at 15GB and exceed build space on
 # Github Actions. To build/push manually, do
 #
-#    docker tag local/pl-fshack docker.io/fnndsc/pl-fshack:1.4.4
-#    docker push docker.io/fnndsc/pl-fshack:1.4.4
+#    docker tag local/pl-fshack docker.io/fnndsc/pl-fshack:1.4.6
+#    docker push docker.io/fnndsc/pl-fshack:1.4.6
 #
-# obviously changing the 1.4.4 to whatever version number is appropriate. Then,
+# obviously changing the 1.4.6 to whatever version number is appropriate. Then,
 # upload to the ChRIS store at https://chrisstore.co/create
 #
-#    docker run --rm docker.io/fnndsc/pl-fshack:1.4.4 fshack.py --json > fshack.json
+#    docker run --rm docker.io/fnndsc/pl-fshack:1.4.6 fshack.py --json > fshack.json
 #
 # either manually via the web ui, or from the CLI
 #
