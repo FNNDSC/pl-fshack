@@ -250,8 +250,8 @@ Let's say you want to run ``mri_convert`` and would have executed something like
 .. code:: bash
 
     cd $DEVEL/data/SAG-anon
-    mri_convert -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm \
-                -o DCM2NII.nii
+    mri_convert 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm \
+                DCM2NII.nii
 
 The equivalent of using ``docker`` would be:
 
@@ -333,6 +333,17 @@ Running an arbitrary FS app requires calling that app directly in the container 
         /incoming/file1.nii /incoming/file2.nii /outgoing/out.nii
 
 In the above, the third line explicitly defines the FS app to call, and the last line the pattern of CLI relevant to that app. Outputs are stored in the ``/outgoing`` directory of the container that is volume mapped as shown to ``$DEVEL/results``.
+
+Alluding back to the ``mri_convert`` example of earlier, this can also be specified with
+
+.. code:: bash
+
+    docker run --rm                                                         \
+        -v $DEVEL/data:/incoming -v $DEVEL/results/:/outgoing               \
+        --entrypoint /usr/local/freesurfer/bin/mri_convert                  \
+        fnndsc/pl-fshack                                                    \
+        /incoming/SAG-anon/0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm \
+        /outgoing/DCM2NII.nii
 
 Debug
 -----
