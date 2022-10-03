@@ -156,7 +156,7 @@ First, let's create a directory, say ``devel`` where-ever you feel like it. We w
     cd ~/
     mkdir devel
     cd devel
-    export DEVEL=$(pwd)
+    export DEVEL=$PWD
 
 Now, we need to fetch sample data.
 
@@ -218,7 +218,7 @@ For ``NifTI`` inputs:
 .. code:: bash
 
     docker run --rm                                                         \
-        -v ${DEVEL}/SAG-anon-nii/:/incoming -v ${DEVEL}/results/:/outgoing  \
+        -v $DEVEL/SAG-anon-nii/:/incoming -v $DEVEL/results/:/outgoing      \
         fnndsc/pl-fshack fshack.py                                          \
         -i SAG-anon.nii                                                     \
         -o recon-of-SAG-anon-nii                                            \
@@ -231,7 +231,7 @@ For ``DICOM`` inputs:
 .. code:: bash
 
     docker run --rm                                                         \
-        -v ${DEVEL}/SAG-anon-nii/:/incoming -v ${DEVEL}/results/:/outgoing  \
+        -v $DEVEL/SAG-anon-nii/:/incoming -v $DEVEL/results/:/outgoing      \
         fnndsc/pl-fshack fshack.py                                          \
         -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
         -o recon-of-SAG-anon-dcm                                            \
@@ -247,11 +247,11 @@ NOTE: The ``recon-all`` commands will take multiple hours to run to completion!
 .. code:: bash
 
     docker run --rm                                                         \
-        -v ${DEVEL}/SAG-anon/:/incoming -v ${DEVEL}/results/:/outgoing      \
+        -v $DEVEL/SAG-anon/:/incoming -v $DEVEL/results/:/outgoing          \
         fnndsc/pl-fshack fshack.py                                          \
+        --exec mri_convert                                                  \
         -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
         -o DCM2NII.nii                                                      \
-        --exec mri_convert                                                  \
         /incoming /outgoing
 
 ``mri_info``
@@ -269,7 +269,7 @@ The results of the below information query are stored in text files
 .. code:: bash
 
     docker run --rm                                                         \
-        -v ${DEVEL}/SAG-anon/:/incoming -v ${DEVEL}/results/:/outgoing      \
+        -v $DEVEL/SAG-anon/:/incoming -v $DEVEL/results/:/outgoing          \
         fnndsc/pl-fshack fshack.py                                          \
         -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
         -o info                                                             \
@@ -288,10 +288,10 @@ Let's run that plugin to generate its output tree and then run ``mris_info`` on 
 .. code:: bash
 
     docker pull fnndsc/pl-freesurfer_pp
-    docker run --rm                                                     \
-        -v $(pwd)/:/incoming -v ${DEVEL}/results:/outgoing              \
-        fnndsc/pl-freesurfer_pp freesurfer_pp.py                        \
-        -c surf                                                         \
+    docker run --rm                                                         \
+        -v $(pwd)/:/incoming -v $DEVEL/results:/outgoing                    \
+        fnndsc/pl-freesurfer_pp freesurfer_pp.py                            \
+        -c surf                                                             \
         -- /incoming /outgoing
 
 The output of the above command is a directory called ``surf`` that should be located in the ``results`` directory. A sample curvature file named ``rh.smoothwm`` from the ``results/surf`` directory is passed as the inputFile to the docker command below.
@@ -299,7 +299,7 @@ The output of the above command is a directory called ``surf`` that should be lo
 .. code:: bash
 
     docker run --rm                                                         \
-        -v ${DEVEL}/results/surf:/incoming -v ${DEVEL}/results/:/outgoing   \
+        -v $DEVEL/results/surf:/incoming -v $DEVEL/results/:/outgoing       \
         fnndsc/pl-fshack fshack.py                                          \
         -i rh.smoothwm                                                      \
         -o mris_info.txt                                                    \
@@ -309,17 +309,17 @@ The output of the above command is a directory called ``surf`` that should be lo
 Arbitrary FS app
 ~~~~~~~~~~~~~~~~
 
-Running an arbitrary FS app requires calling that app directly in the container with an appropriate ``--entrypoint``. For instance, let's use ``mri_mask`` as an example. Assume that two ``nii`` files, ``file1.nii`` and ``file2.nii``, are in the directory ``${DEVEL}/test``: 
+Running an arbitrary FS app requires calling that app directly in the container with an appropriate ``--entrypoint``. For instance, let's use ``mri_mask`` as an example. Assume that two ``nii`` files, ``file1.nii`` and ``file2.nii``, are in the directory ``${DEVEL}/test``:
 
 .. code:: bash
 
     docker run --rm                                                         \
-        -v $(DEVEL)/test:/incoming -v $(DEVEL)/results/:/outgoing           \
+        -v $DEVEL/test:/incoming -v $DEVEL/results/:/outgoing               \
         --entrypoint /usr/local/freesurfer/bin/mri_mask                     \
         fnndsc/pl-fshack                                                    \
         /incoming/file1.nii /incoming/file2.nii /outgoing/out.nii
 
-In the above, the third line explicitly defines the FS app to call, and the last line the pattern of CLI relevant to that app. Outputs are stored in the ``/outgoing`` directory of the container that is volume mapped as shown to ``${DEVEL}/results``.
+In the above, the third line explicitly defines the FS app to call, and the last line the pattern of CLI relevant to that app. Outputs are stored in the ``/outgoing`` directory of the container that is volume mapped as shown to ``$DEVEL/results``.
 
 Debug
 -----
@@ -333,9 +333,9 @@ So, assuming the same env variables as above, and assuming that you are in the s
 .. code:: bash
 
     docker run --rm -ti                                                         \
-               -v $(pwd)/fshack:/usr/src/fshack                                 \
-               -v ${DEVEL}/SAG-anon/:/incoming                                  \
-               -v ${DEVEL}/results/:/outgoing                                   \
+               -v $PWD/fshack:/usr/src/fshack                                   \
+               -v $DEVEL/SAG-anon/:/incoming                                    \
+               -v $DEVEL/results/:/outgoing                                     \
                fnndsc/pl-fshack fshack.py                                       \
                -i .dcm                                                          \
                -o info                                                          \
@@ -347,9 +347,9 @@ or the first stage of ``recon-all``:
 .. code:: bash
 
     docker run --rm -ti                                                         \
-               -v $(pwd)/fshack:/usr/src/fshack                                 \
-               -v ${DEVEL}/SAG-anon/:/incoming                                  \
-               -v ${DEVEL}/results/:/outgoing                                   \
+               -v $PWD/fshack:/usr/src/fshack                                   \
+               -v $DEVEL/SAG-anon/:/incoming                                    \
+               -v $DEVEL/results/:/outgoing                                     \
                fnndsc/pl-fshack fshack.py                                       \
                -i .dcm                                                          \
                -o recon-all                                                     \
