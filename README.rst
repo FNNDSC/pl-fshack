@@ -258,7 +258,7 @@ The equivalent of using ``docker`` would be:
 .. code:: bash
 
     docker run --rm                                                         \
-        -v $DEVEL/data:/incoming -v $DEVEL/results/:/outgoing          \
+        -v $DEVEL/data:/incoming -v $DEVEL/results/:/outgoing               \
         fnndsc/pl-fshack fshack.py                                          \
         --exec mri_convert                                                  \
         -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
@@ -282,7 +282,7 @@ The results of the below information query are stored in text files
 .. code:: bash
 
     docker run --rm                                                         \
-        -v $DEVEL/data:/incoming -v $DEVEL/results/:/outgoing          \
+        -v $DEVEL/data:/incoming -v $DEVEL/results/:/outgoing               \
         fnndsc/pl-fshack fshack.py                                          \
         -i 0001-1.3.12.2.1107.5.2.19.45152.2013030808110258929186035.dcm    \
         -o info                                                             \
