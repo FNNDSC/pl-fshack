@@ -347,7 +347,7 @@ So, assuming the same env variables as above, and assuming that you are in the s
 
     docker run --rm -ti                                                         \
                -v $PWD/fshack:/usr/src/fshack                                   \
-               -v $DEVEL/data:/incoming                                    \
+               -v $DEVEL/data:/incoming                                         \
                -v $DEVEL/results/:/outgoing                                     \
                fnndsc/pl-fshack fshack.py                                       \
                -i .dcm                                                          \
@@ -361,7 +361,7 @@ or the first stage of ``recon-all``:
 
     docker run --rm -ti                                                         \
                -v $PWD/fshack:/usr/src/fshack                                   \
-               -v $DEVEL/data:/incoming                                    \
+               -v $DEVEL/data:/incoming                                         \
                -v $DEVEL/results/:/outgoing                                     \
                fnndsc/pl-fshack fshack.py                                       \
                -i .dcm                                                          \
