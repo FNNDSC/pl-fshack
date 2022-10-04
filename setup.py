@@ -21,12 +21,12 @@ setup(
       name             =   'fshack',
       # for best practices make this version the same as the VERSION class variable
       # defined in your ChrisApp-derived Python class
-      version          =   '1.4.6',
+      version          =   '1.4.8',
       description      =   'A containerized FreeSurfer, with several modes of operation accessible via specific CLI patterning',
       long_description =   readme(),
       author           =   'FNNDSC',
       author_email     =   'dev@babyMRI.org',
-      url              =   'http://wiki',
+      url              =   'https://github.com/FNNDSC/pl-fshack',
       packages         =   ['fshack'],
       install_requires =   ['chrisapp', 'pudb'],
       test_suite       =   'nose.collector',
