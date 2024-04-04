@@ -21,16 +21,16 @@
 #
 #   docker run -ti -e HOST_IP=$(ip route | grep -v docker | awk '{if(NF==11) print $9}') --entrypoint /bin/bash local/pl-fshack
 #
-# Versions of FreeSurfer post 7.3.1 weigh in at 15GB and exceed build space on
+# Versions of FreeSurfer post 7.4.1 weigh in at 15GB and exceed build space on
 # Github Actions. To build/push manually, do
 #
-#    docker tag local/pl-fshack docker.io/fnndsc/pl-fshack:1.4.8
-#    docker push docker.io/fnndsc/pl-fshack:1.4.8
+#    docker tag local/pl-fshack docker.io/fnndsc/pl-fshack:1.5.0
+#    docker push docker.io/fnndsc/pl-fshack:1.5.0
 #
-# obviously changing the 1.4.8 to whatever version number is appropriate. Then,
+# obviously changing the 1.5.0 to whatever version number is appropriate. Then,
 # upload to the ChRIS store at https://chrisstore.co/create
 #
-#    docker run --rm docker.io/fnndsc/pl-fshack:1.4.8 fshack.py --json > fshack.json
+#    docker run --rm docker.io/fnndsc/pl-fshack:1.5.0 fshack.py --json > fshack.json
 #
 # either manually via the web ui, or from the CLI
 #
@@ -53,7 +53,7 @@ COPY ["fshack/", "requirements.txt", "license.txt", "${APPROOT}/"]
 
 WORKDIR $APPROOT
 
-ARG FREESURFER_VERSION=7.3.2
+ARG FREESURFER_VERSION=7.4.1
 RUN pip install -r requirements.txt                         \
     && apt-get update -q &&                                 \
     apt-get -qq install bc binutils libgomp1 perl psmisc curl tar tcsh uuid-dev vim-common libjpeg62-dev \
@@ -88,6 +88,7 @@ ENV PATH="/usr/local/freesurfer/bin:/usr/local/freesurfer/fsfast/bin:/usr/local/
 WORKDIR /usr/local/src/pl-fshack
 COPY . .
 RUN pip install .
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 WORKDIR $APPROOT
 
 CMD ["fshack.py", "--help"]
