@@ -1,60 +1,82 @@
-# Automatically build multi-architectural tagged container images and push them to DockerHub
-# https://github.com/FNNDSC/cookiecutter-chrisapp/wiki/Automatic-Builds
+# Continuous integration testing for ChRIS Plugin.
+# https://github.com/FNNDSC/python-chrisapp-template/wiki/Continuous-Integration
 #
-# - targeted platforms: x86_64, PowerPC64, ARM64
-# - master is built as fnndsc/pl-fshack:latest
-# - tagged commits are built as fnndsc/pl-fshack:<tag>
-# - tagged commits are also uploaded to chrisstore.co
-#
-# In order to use this workflow, see
-# https://github.com/FNNDSC/cookiecutter-chrisapp/wiki/Automatic-Builds#steps-to-enable
+# - on push and PR: run pytest
+# - on push to main: build and push container images as ":latest"
+# - on push to semver tag: build and push container image with tag and
+#                          upload plugin description to https://chrisstore.co
 
-name: ci
+name: build
 
 on:
   push:
-    # we have to guess what the name of the default branch is
-    branches: [ master, main, trunk ]
-    tags: [ '**' ]
+    branches: [ main ]
+    tags:
+      - "v?[0-9]+.[0-9]+.[0-9]+*"
   pull_request:
-    branches: [ master, main, trunk ]
+    branches: [ main ]
 
 jobs:
   test:
-    # delete the line below to enable automatic testing
-    if: false
-    runs-on: ubuntu-20.04
+    name: Unit tests
+    if: false  # delete this line to enable automatic testing
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
-      - name: build
-        run: docker build -t "${GITHUB_REPOSITORY,,}" .
-      - name: nose tests
-        run: docker run "${GITHUB_REPOSITORY,,}" nosetests
+      - uses: actions/checkout@v3
+      - uses: docker/setup-buildx-action@v2
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: Build
+        uses: docker/build-push-action@v3
+        with:
+          build-args: extras_require=dev
+          context: .
+          load: true
+          push: false
+          tags: "localhost/local/app:dev"
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+      - name: Run pytest
+        run: |
+          docker run -v "$GITHUB_WORKSPACE:/app:ro" -w /app localhost/local/app:dev \
+            pytest -o cache_dir=/tmp/pytest
 
-  publish:
+  build:
+    name: Build
     if: github.event_name == 'push' || github.event_name == 'release'
-    runs-on: ubuntu-20.04
-
-    # we want to both push the build to DockerHub, but also
-    # keep a local copy so that we can run
-    #
-    #     docker run fnndsc/pl-app app --json > App.json
-    #
-    # buildx currently does not support multiple output locations,
-    # neither can multi-architectural builds be loaded into docker.
-    # Here we use a local registry to cache the build.
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
+    # needs: [ test ]  # uncomment to require passing tests
+    runs-on: ubuntu-22.04
 
     steps:
+      - name: Stop docker
+        run: sudo systemctl stop docker
+      - name: Clean docker data
+        run: |
+          sudo rm -rf /var/lib/docker
+          sudo mkdir /var/lib/docker
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@6ae56c86ea8db291ae39f62352a412c36ab8179b
+        with:
+          root-reserve-mb: 8192  # space needed for logs
+          swap-size-mb: 1        # must be >0
+          build-mount-path: /var/lib/docker
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'false'
+      - name: Start docker
+        run: sudo systemctl start docker
       - name: Get git tag
         id: git_info
         if: startsWith(github.ref, 'refs/tags/')
-        run: echo "::set-output name=tag::${GITHUB_REF##*/}"
-      - name: Decide image tag name
+        run: echo "tag=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+      - name: Get project info
         id: determine
         env:
           git_tag: ${{ steps.git_info.outputs.tag }}
@@ -62,51 +84,101 @@ jobs:
           repo="${GITHUB_REPOSITORY,,}"  # to lower case
           # if build triggered by tag, use tag name
           tag="${git_tag:-latest}"
+
+          # if tag is a version number prefixed by 'v', remove the 'v'
+          if [[ "$tag" =~ ^v[0-9].* ]]; then
+            tag="${tag:1}"
+          fi
+
           dock_image=$repo:$tag
           echo $dock_image
-          echo "::set-output name=dock_image::$dock_image"
-          echo "::set-output name=repo::$repo"
-      - uses: actions/checkout@v2
+          echo "dock_image=$dock_image" >> $GITHUB_OUTPUT
+          echo "repo=$repo" >> $GITHUB_OUTPUT
 
-      # QEMU is for emulating non-x86_64 platforms
-      - uses: docker/setup-qemu-action@v1
-      # buildx is the next-generation docker image builder
-      - uses: docker/setup-buildx-action@v1
+      - uses: actions/checkout@v3
+        # QEMU is used for non-x86_64 builds
+      - uses: docker/setup-qemu-action@v2
+        # buildx adds additional features to docker build
+      - uses: docker/setup-buildx-action@v2
         with:
           driver-opts: network=host
-      # save some time during rebuilds
+        # cache slightly improves rebuild time
       - name: Cache Docker layers
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
-      - name: Login to DockerHub
-        id: dockerhub_login
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1 
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v2
+        # Here, we want to do the docker build twice:
+        # The first build pushes to our local registry for testing.
+        # The second build pushes to Docker Hub and ghcr.io
+      - name: Build (local only)
+        uses: docker/build-push-action@v3
         id: docker_build
         with:
           context: .
           file: ./Dockerfile
+          tags: localhost/${{ steps.determine.outputs.dock_image }}
+          load: true
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+      # If you have a directory called examples/incoming/ and examples/outgoing/, then
+      # run your ChRIS plugin with no parameters, and asser that it creates all the files
+      # which are expected. File contents are not compared.
+      - name: Run examples
+        id: run_examples
+        run: |
+          if ! [ -d 'examples/incoming/' ] || ! [ -d 'examples/outgoing/' ]; then
+            echo "No examples."
+            exit 0
+          fi
+        
+          dock_image=localhost/${{ steps.determine.outputs.dock_image }}
+          output_dir=$(mktemp -d)
+          cmd=$(docker image inspect -f '{{ (index .Config.Cmd 0) }}' $dock_image)
+          docker run --rm -u "$(id -u):$(id -g)" \
+            -v "$PWD/examples/incoming:/incoming:ro" \
+            -v "$output_dir:/outgoing:rw" \
+            $dock_image $cmd /incoming /outgoing
+          
+          for expected_file in $(find examples/outgoing -type f); do
+            fname="${expected_file##*/}"
+            out_path="$output_dir/$fname"
+            printf "Checking output %s exists..." "$out_path"
+            if [ -f "$out_path" ]; then
+              echo "ok"
+            else
+              echo "not found"
+              exit 1
+            fi
+          done
+
+      - name: Login to DockerHub
+        id: dockerhub_login
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        if: github.event_name == 'push' || github.event_name == 'release'
+        with:
+          context: .
+          file: ./Dockerfile
           tags: |
-            ${{ steps.determine.outputs.dock_image }}
-            localhost:5000/${{ steps.determine.outputs.dock_image }}
+            docker.io/${{ steps.determine.outputs.dock_image }}
             ghcr.io/${{ steps.determine.outputs.dock_image }}
-          platforms: linux/amd64
+          # if non-x86_84 architectures are supported, add them here
+          platforms: linux/amd64  #,linux/arm64,linux/ppc64le
           push: true
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
@@ -116,29 +188,16 @@ jobs:
         run: |
           repo=${{ steps.determine.outputs.repo }}
           dock_image=${{ steps.determine.outputs.dock_image }}
-          docker pull localhost:5000/$dock_image
-          docker tag localhost:5000/$dock_image $dock_image
-          script=$(docker inspect --format '{{ (index .Config.Cmd 0) }}' $dock_image)
-          docker run --rm $dock_image $script --json > /tmp/description.json
-          jq < /tmp/description.json  # print in log
-          echo "::set-output name=title::$(jq -r '.title' <<< "$json")"
-
-      - name: Upload to ChRIS Store
-        if: "!endsWith(steps.determine.outputs.dock_image, ':latest')"
-        uses: FNNDSC/chrisstore-action@v1.1.0
-        with:
-          descriptor_file: /tmp/description.json
-          auth: ${{ secrets.CHRIS_STORE_USER }}
-          chris_admin_auth: ${{ secrets.CUBE_CHRISPROJECT_ORG_ADMIN_USER }}
-          chris_admin_url: https://cube.chrisproject.org/chris-admin/api/v1/
-          compute_resources: galena
+          docker run --rm localhost/$dock_image chris_plugin_info > /tmp/description.json
+          jq < /tmp/description.json  # pretty print in log
+          echo "title=$(jq -r '.title' < /tmp/description.json)" >> $GITHUB_OUTPUT
 
       - name: Update DockerHub description
-        uses: peter-evans/dockerhub-description@v2
+        uses: peter-evans/dockerhub-description@v3
         continue-on-error: true  # it is not crucial that this works
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
           short-description: ${{ steps.pluginmeta.outputs.title }}
-          readme-filepath: ./README.rst
+          readme-filepath: ./README.md
           repository: ${{ steps.determine.outputs.repo }}
