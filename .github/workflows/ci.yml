@@ -63,7 +63,7 @@ jobs:
         uses: easimon/maximize-build-space@6ae56c86ea8db291ae39f62352a412c36ab8179b
         with:
           root-reserve-mb: 8192  # space needed for logs
-          swap-size-mb: 1        # must be >0
+          swap-size-mb: 1024       # must be >0
           build-mount-path: /var/lib/docker
           remove-dotnet: 'true'
           remove-android: 'true'
