@@ -1,49 +1,52 @@
-# Continuous integration testing for ChRIS Plugin.
-# https://github.com/FNNDSC/python-chrisapp-template/wiki/Continuous-Integration
+# Automatically build multi-architectural tagged container images and push them to DockerHub
+# https://github.com/FNNDSC/cookiecutter-chrisapp/wiki/Automatic-Builds
 #
-# - on push and PR: run pytest
-# - on push to main: build and push container images as ":latest"
-# - on push to semver tag: build and push container image with tag and
-#                          upload plugin description to https://cube.chrisproject.org/api/v1/
+# - targeted platforms: x86_64, PowerPC64, ARM64
+# - master is built as fnndsc/pl-markimg:latest
+# - tagged commits are built as fnndsc/pl-markimg:<tag>
+# - tagged commits are also uploaded to chrisstore.co
+#
+# In order to use this workflow, see
+# https://github.com/FNNDSC/cookiecutter-chrisapp/wiki/Automatic-Builds#steps-to-enable
 
-name: build
+name: ci
 
 on:
   push:
-    branches: [ main ]
-    tags:
-      - "v?[0-9]+.[0-9]+.[0-9]+*"
+    # we have to guess what the name of the default branch is
+    branches: [ master, main, trunk ]
+    tags: [ '**' ]
   pull_request:
-    branches: [ main ]
+    branches: [ master, main, trunk ]
 
 jobs:
   test:
-    name: Unit tests
-    if: False
-    runs-on: ubuntu-22.04
+    if: false
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - name: Build
-        uses: docker/build-push-action@v5
-        with:
-          build-args: extras_require=dev
-          context: .
-          load: true
-          push: false
-          tags: "localhost/local/app:dev"
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      - name: Run pytest
-        run: |
-          docker run -v "$GITHUB_WORKSPACE:/app:ro" -w /app localhost/local/app:dev \
-            pytest -o cache_dir=/tmp/pytest
+      - uses: actions/checkout@v2
+      - name: build
+        run: docker build -t "${GITHUB_REPOSITORY,,}" .
+      - name: nose tests
+        run: docker run "${GITHUB_REPOSITORY,,}" nosetests
 
-  build:
-    name: Build
+  publish:
     if: github.event_name == 'push' || github.event_name == 'release'
-    # needs: [ test ]  # uncomment to require passing tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
+
+    # we want to both push the build to DockerHub, but also
+    # keep a local copy so that we can run
+    #
+    #     docker run fnndsc/pl-app app --json > App.json
+    #
+    # buildx currently does not support multiple output locations,
+    # neither can multi-architectural builds be loaded into docker.
+    # Here we use a local registry to cache the build.
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
 
     steps:
       - name: Stop docker
@@ -51,20 +54,20 @@ jobs:
 
       - name: Clean docker data
         run: |
-          sudo rm -rf /var/lib/docker
-          sudo mkdir /var/lib/docker
+            sudo rm -rf /var/lib/docker
+            sudo mkdir /var/lib/docker
 
       - name: Maximize build space
         uses: easimon/maximize-build-space@6ae56c86ea8db291ae39f62352a412c36ab8179b
         with:
-          root-reserve-mb: 8192  # space needed for logs
-          swap-size-mb: 1024       # must be >0
-          build-mount-path: /var/lib/docker
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'false'
+            root-reserve-mb: 8192  # space needed for logs
+            swap-size-mb: 1024       # must be >0
+            build-mount-path: /var/lib/docker
+            remove-dotnet: 'true'
+            remove-android: 'true'
+            remove-haskell: 'true'
+            remove-codeql: 'true'
+            remove-docker-images: 'false'
 
       - name: Start docker
         run: sudo systemctl start docker
@@ -72,8 +75,7 @@ jobs:
       - name: Get git tag
         id: git_info
         if: startsWith(github.ref, 'refs/tags/')
-        run: echo "tag=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
-
+        run: echo "::set-output name=tag::${GITHUB_REF##*/}"
       - name: Decide image tag name
         id: determine
         env:
@@ -84,8 +86,8 @@ jobs:
           tag="${git_tag:-latest}"
           dock_image=$repo:$tag
           echo $dock_image
-          echo "dock_image=$dock_image" >> $GITHUB_OUTPUT
-          echo "repo=$repo" >> $GITHUB_OUTPUT
+          echo "::set-output name=dock_image::$dock_image"
+          echo "::set-output name=repo::$repo"
 
       - uses: actions/checkout@v2
 
@@ -95,7 +97,7 @@ jobs:
       - uses: docker/setup-buildx-action@v1
         with:
           driver-opts: network=host
-        # save some time during rebuilds
+      # save some time during rebuilds
       - name: Cache Docker layers
         uses: actions/cache@v2
         with:
@@ -142,8 +144,15 @@ jobs:
           docker tag localhost:5000/$dock_image $dock_image
           script=$(docker inspect --format '{{ (index .Config.Cmd 0) }}' $dock_image)
           docker run --rm $dock_image $script --json \
-              | jq '. += {"name":"pl-fshack", "dock_image": "'$dock_image'", "public_repo": "'${{ github.server_url }}/${{ github.repository }}'" }' \
-              > /tmp/description.json
+            | jq '. += {"name":"pl-markimg", "dock_image": "'$dock_image'", "public_repo": "'${{ github.server_url }}/${{ github.repository }}'" }' \
+            > /tmp/description.json
+          json="$(docker run --rm $dock_image $script --json)"
+          # Escape single quotes
+          json_escaped=$(echo "$json" | sed "s/'/\\'/g")
+
+          jq <<< "$json"  # pretty print in log
+          echo "json=$json_escaped" >> $GITHUB_OUTPUT
+          echo "title=$(jq -r '.title' <<< "$json")" >> $GITHUB_OUTPUT
 
       - name: Update DockerHub description
         uses: peter-evans/dockerhub-description@v2
