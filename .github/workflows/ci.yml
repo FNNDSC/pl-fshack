@@ -2,8 +2,8 @@
 # https://github.com/FNNDSC/cookiecutter-chrisapp/wiki/Automatic-Builds
 #
 # - targeted platforms: x86_64, PowerPC64, ARM64
-# - master is built as fnndsc/pl-markimg:latest
-# - tagged commits are built as fnndsc/pl-markimg:<tag>
+# - master is built as fnndsc/pl-dircopy:latest
+# - tagged commits are built as fnndsc/pl-dircopy:<tag>
 # - tagged commits are also uploaded to chrisstore.co
 #
 # In order to use this workflow, see
@@ -14,40 +14,15 @@ name: ci
 on:
   push:
     # we have to guess what the name of the default branch is
-    branches: [ master, main, trunk ]
-    tags: [ '**' ]
+    branches: [ main, master ]
+    tags: [ "[0-9]+.[0-9]+.[0-9]+*" ]
   pull_request:
-    branches: [ master, main, trunk ]
+    branches: [ main, master ]
 
 jobs:
-  test:
-    if: false
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v2
-      - name: build
-        run: docker build -t "${GITHUB_REPOSITORY,,}" .
-      - name: nose tests
-        run: docker run "${GITHUB_REPOSITORY,,}" nosetests
-
-  publish:
-    if: github.event_name == 'push' || github.event_name == 'release'
-    runs-on: ubuntu-24.04
-
-    # we want to both push the build to DockerHub, but also
-    # keep a local copy so that we can run
-    #
-    #     docker run fnndsc/pl-app app --json > App.json
-    #
-    # buildx currently does not support multiple output locations,
-    # neither can multi-architectural builds be loaded into docker.
-    # Here we use a local registry to cache the build.
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
-
+  build:
+    name: Build
+    runs-on: ubuntu-22.04
     steps:
       - name: Stop docker
         run: sudo systemctl stop docker
@@ -60,117 +35,119 @@ jobs:
       - name: Maximize build space
         uses: easimon/maximize-build-space@6ae56c86ea8db291ae39f62352a412c36ab8179b
         with:
-            root-reserve-mb: 8192  # space needed for logs
-            swap-size-mb: 1024       # must be >0
-            build-mount-path: /var/lib/docker
-            remove-dotnet: 'true'
-            remove-android: 'true'
-            remove-haskell: 'true'
-            remove-codeql: 'true'
-            remove-docker-images: 'false'
+          root-reserve-mb: 8192  # space needed for logs
+          swap-size-mb: 1024       # must be >0
+          build-mount-path: /var/lib/docker
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+          remove-codeql: 'true'
+          remove-docker-images: 'false'
 
       - name: Start docker
         run: sudo systemctl start docker
 
-      - name: Get git tag
-        id: git_info
-        if: startsWith(github.ref, 'refs/tags/')
-        run: echo "::set-output name=tag::${GITHUB_REF##*/}"
-      - name: Decide image tag name
-        id: determine
-        env:
-          git_tag: ${{ steps.git_info.outputs.tag }}
+      - name: Decide image tags
+        id: info
+        shell: python
         run: |
-          repo="${GITHUB_REPOSITORY,,}"  # to lower case
-          # if build triggered by tag, use tag name
-          tag="${git_tag:-latest}"
-          dock_image=$repo:$tag
-          echo $dock_image
-          echo "::set-output name=dock_image::$dock_image"
-          echo "::set-output name=repo::$repo"
+          import os
+          import itertools
+          
+          registries = ['docker.io', 'ghcr.io']
+          repos = ['${{ github.repository }}']
+          if '${{ github.ref_type }}' == 'branch':
+            version = 'unknown'
+            tags = ['latest']
+          elif '${{ github.ref_type }}' == 'tag':
+              tag = '${{ github.ref_name }}'
+              version = tag[1:] if tag.startswith('v') else tag
+              tags = ['latest', version]
+          else:
+              tags = []
 
-      - uses: actions/checkout@v2
+          def join_tag(t):
+              registry, repo, tag = t
+              return f'{registry}/{repo}:{tag}'.lower()
 
-      # QEMU is for emulating non-x86_64 platforms
-      - uses: docker/setup-qemu-action@v1
-      # buildx is the next-generation docker image builder
-      - uses: docker/setup-buildx-action@v1
+          product = itertools.product(registries, repos, tags)
+          tags_csv = ','.join(map(join_tag, product))
+          outputs = {
+              'tags_csv' : tags_csv,
+              'push'     : 'true' if tags_csv else 'false',
+              'local_tag': join_tag(('localhost', '${{ github.repository }}', 'latest')),
+              'one_tag': join_tag(('ghcr.io', repos[0], version))
+          }
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              for k, v in outputs.items():
+                  out.write(f'{k}={v}\n')
+
+      - uses: actions/checkout@v3
+        # QEMU is used for non-x86_64 builds
+      - uses: docker/setup-qemu-action@v3
+        # buildx adds additional features to docker build
+      - uses: docker/setup-buildx-action@v3
         with:
           driver-opts: network=host
-      # save some time during rebuilds
-      - name: Cache Docker layers
-        uses: actions/cache@v2
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
 
-      - name: Login to DockerHub
-        id: dockerhub_login
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v2
+        # Here, we want to do the docker build twice:
+        # The first build pushes to our local registry for testing.
+        # The second build pushes to Docker Hub and ghcr.io
+      - name: Build (local only)
+        uses: docker/build-push-action@v3
         id: docker_build
         with:
           context: .
           file: ./Dockerfile
-          tags: |
-            ${{ steps.determine.outputs.dock_image }}
-            localhost:5000/${{ steps.determine.outputs.dock_image }}
-            ghcr.io/${{ steps.determine.outputs.dock_image }}
-          platforms: linux/amd64
-          push: true
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
+          tags: ${{ steps.info.outputs.local_tag }}
+          load: true
+          cache-from: type=gha
 
-      - name: Get plugin meta
-        id: pluginmeta
-        run: |
-          repo=${{ steps.determine.outputs.repo }}
-          dock_image=${{ steps.determine.outputs.dock_image }}
-          docker pull localhost:5000/$dock_image
-          docker tag localhost:5000/$dock_image $dock_image
-          script=$(docker inspect --format '{{ (index .Config.Cmd 0) }}' $dock_image)
-          docker run --rm $dock_image $script --json \
-            | jq '. += {"name":"pl-markimg", "dock_image": "'$dock_image'", "public_repo": "'${{ github.server_url }}/${{ github.repository }}'" }' \
-            > /tmp/description.json
-          json="$(docker run --rm $dock_image $script --json)"
-          # Escape single quotes
-          json_escaped=$(echo "$json" | sed "s/'/\\'/g")
-
-          jq <<< "$json"  # pretty print in log
-          echo "json=$json_escaped" >> $GITHUB_OUTPUT
-          echo "title=$(jq -r '.title' <<< "$json")" >> $GITHUB_OUTPUT
-
-      - name: Update DockerHub description
-        uses: peter-evans/dockerhub-description@v2
-        continue-on-error: true  # it is not crucial that this works
+      - name: Login to DockerHub
+        if: (github.event_name == 'push' || github.event_name == 'release') && contains(steps.info.outputs.tags_csv, 'docker.io')
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          short-description: ${{ steps.pluginmeta.outputs.title }}
-          readme-filepath: ./README.rst
-          repository: ${{ steps.determine.outputs.repo }}
+      - name: Login to GitHub Container Registry
+        if: (github.event_name == 'push' || github.event_name == 'release') && contains(steps.info.outputs.tags_csv, 'ghcr.io')
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v3
+        if: (github.event_name == 'push' || github.event_name == 'release')
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: ${{ steps.info.outputs.tags_csv }}
+          platforms: linux/amd64,linux/arm64,linux/ppc64le
+          push: ${{ steps.info.outputs.push }}
+          cache-to: type=gha,mode=max
 
+      - name: Create plugin description
+        run: |
+          docker run --rm ${{ steps.info.outputs.local_tag }} fshack.py --json \
+          | jq '. + {"name": "pl-fshack", "public_repo": "${{ github.server_url }}/${{ github.repository }}", "dock_image": "${{ steps.info.outputs.one_tag }}"}' > ./description.json
       - name: Upload ChRIS Plugin
         id: upload
         if: github.ref_type == 'tag'
-        uses: FNNDSC/upload-chris-plugin@main
+        uses: FNNDSC/upload-chris-plugin@v1
         with:
-          description_file: /tmp/description.json
+          description_file: ./description.json
           username: ${{ secrets.CHRISPROJECT_USERNAME }}
           password: ${{ secrets.CHRISPROJECT_PASSWORD }}
           chris_url: https://cube.chrisproject.org/api/v1/
           compute_names: NERC
+
+      - name: Update DockerHub description
+        if: steps.upload.outcome == 'success'
+        uses: peter-evans/dockerhub-description@v3
+        continue-on-error: true  # it is not crucial that this works
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          short-description: ${{ steps.upload.outputs.title }}
+          readme-filepath: ./README.rst
