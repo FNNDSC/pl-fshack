@@ -10,11 +10,11 @@ name: build
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, build-fix ]
     tags:
       - "v?[0-9]+.[0-9]+.[0-9]+*"
   pull_request:
-    branches: [ main ]
+    branches: [ main, build-fix ]
 
 jobs:
   test:
