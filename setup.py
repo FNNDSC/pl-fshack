@@ -21,7 +21,7 @@ setup(
       name             =   'fshack',
       # for best practices make this version the same as the VERSION class variable
       # defined in your ChrisApp-derived Python class
-      version          =   '1.5.4',
+      version          =   '1.5.5',
       description      =   'A containerized FreeSurfer, with several modes of operation accessible via specific CLI patterning',
       long_description =   readme(),
       author           =   'FNNDSC',
