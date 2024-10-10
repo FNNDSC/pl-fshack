@@ -1,10 +1,5 @@
 # Continuous integration testing for ChRIS Plugin.
 # https://github.com/FNNDSC/python-chrisapp-template/wiki/Continuous-Integration
-#
-# - on push and PR: run pytest
-# - on push to main: build and push container images as ":latest"
-# - on push to semver tag: build and push container image with tag and
-#                          upload plugin description to https://chrisstore.co
 
 name: build
 
@@ -13,191 +8,102 @@ on:
     branches: [ main, build-fix ]
     tags:
       - "v?[0-9]+.[0-9]+.[0-9]+*"
-  pull_request:
-    branches: [ main, build-fix ]
 
 jobs:
-  test:
-    name: Unit tests
-    if: false  # delete this line to enable automatic testing
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - uses: docker/setup-buildx-action@v2
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-      - name: Build
-        uses: docker/build-push-action@v3
-        with:
-          build-args: extras_require=dev
-          context: .
-          load: true
-          push: false
-          tags: "localhost/local/app:dev"
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
-      - name: Run pytest
-        run: |
-          docker run -v "$GITHUB_WORKSPACE:/app:ro" -w /app localhost/local/app:dev \
-            pytest -o cache_dir=/tmp/pytest
-
   build:
     name: Build
-    if: github.event_name == 'push' || github.event_name == 'release'
-    # needs: [ test ]  # uncomment to require passing tests
-    runs-on: ubuntu-22.04
-
+    runs-on: ubuntu-24.04
     steps:
       - name: Stop docker
         run: sudo systemctl stop docker
       - name: Clean docker data
         run: |
-          sudo rm -rf /var/lib/docker
-          sudo mkdir /var/lib/docker
+         sudo rm -rf /var/lib/docker
+         sudo mkdir /var/lib/docker
       - name: Maximize build space
         uses: easimon/maximize-build-space@6ae56c86ea8db291ae39f62352a412c36ab8179b
         with:
-          root-reserve-mb: 8192  # space needed for logs
-          swap-size-mb: 1024       # must be >0
-          build-mount-path: /var/lib/docker
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-          remove-codeql: 'true'
-          remove-docker-images: 'false'
+         root-reserve-mb: 8192  # space needed for logs
+         swap-size-mb: 1024       # must be >0
+         build-mount-path: /var/lib/docker
+         remove-dotnet: 'true'
+         remove-android: 'true'
+         remove-haskell: 'true'
+         remove-codeql: 'true'
+         remove-docker-images: 'false'
       - name: Start docker
         run: sudo systemctl start docker
-      - name: Get git tag
-        id: git_info
-        if: startsWith(github.ref, 'refs/tags/')
-        run: echo "tag=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
-      - name: Get project info
-        id: determine
-        env:
-          git_tag: ${{ steps.git_info.outputs.tag }}
-        run: |
-          repo="${GITHUB_REPOSITORY,,}"  # to lower case
-          # if build triggered by tag, use tag name
-          tag="${git_tag:-latest}"
-
-          # if tag is a version number prefixed by 'v', remove the 'v'
-          if [[ "$tag" =~ ^v[0-9].* ]]; then
-            tag="${tag:1}"
-          fi
-
-          dock_image=$repo:$tag
-          echo $dock_image
-          echo "dock_image=$dock_image" >> $GITHUB_OUTPUT
-          echo "repo=$repo" >> $GITHUB_OUTPUT
-
-      - uses: actions/checkout@v3
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            docker.io/${{ github.repository }}
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=pep440,pattern={{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
         # QEMU is used for non-x86_64 builds
-      - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-qemu-action@v3
         # buildx adds additional features to docker build
-      - uses: docker/setup-buildx-action@v2
+      - uses: docker/setup-buildx-action@v3
         with:
           driver-opts: network=host
-        # cache slightly improves rebuild time
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-
-        # Here, we want to do the docker build twice:
-        # The first build pushes to our local registry for testing.
-        # The second build pushes to Docker Hub and ghcr.io
-      - name: Build (local only)
-        uses: docker/build-push-action@v3
-        id: docker_build
-        with:
-          context: .
-          file: ./Dockerfile
-          tags: localhost/${{ steps.determine.outputs.dock_image }}
-          load: true
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
-      # If you have a directory called examples/incoming/ and examples/outgoing/, then
-      # run your ChRIS plugin with no parameters, and asser that it creates all the files
-      # which are expected. File contents are not compared.
-      - name: Run examples
-        id: run_examples
-        run: |
-          if ! [ -d 'examples/incoming/' ] || ! [ -d 'examples/outgoing/' ]; then
-            echo "No examples."
-            exit 0
-          fi
-        
-          dock_image=localhost/${{ steps.determine.outputs.dock_image }}
-          output_dir=$(mktemp -d)
-          cmd=$(docker image inspect -f '{{ (index .Config.Cmd 0) }}' $dock_image)
-          docker run --rm -u "$(id -u):$(id -g)" \
-            -v "$PWD/examples/incoming:/incoming:ro" \
-            -v "$output_dir:/outgoing:rw" \
-            $dock_image $cmd /incoming /outgoing
-          
-          for expected_file in $(find examples/outgoing -type f); do
-            fname="${expected_file##*/}"
-            out_path="$output_dir/$fname"
-            printf "Checking output %s exists..." "$out_path"
-            if [ -f "$out_path" ]; then
-              echo "ok"
-            else
-              echo "not found"
-              exit 1
-            fi
-          done
-
       - name: Login to DockerHub
-        id: dockerhub_login
-        uses: docker/login-action@v2
+        if: github.event_name == 'push' && contains(steps.meta.outputs.tags, 'docker.io')
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
+        if: github.event_name == 'push' && contains(steps.meta.outputs.tags, 'ghcr.io')
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and push
-        uses: docker/build-push-action@v3
-        if: github.event_name == 'push' || github.event_name == 'release'
+        uses: docker/build-push-action@v6
+        if: github.event_name == 'push'
         with:
-          context: .
-          file: ./Dockerfile
-          tags: |
-            docker.io/${{ steps.determine.outputs.dock_image }}
-            ghcr.io/${{ steps.determine.outputs.dock_image }}
-          # if non-x86_84 architectures are supported, add them here
-          platforms: linux/amd64  #,linux/arm64,linux/ppc64le
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # linux/ppc64le not working, see https://github.com/ANTsX/ANTs/issues/1644
+          platforms: linux/amd64,linux/arm64
           push: true
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache
-
-      - name: Get plugin meta
-        id: pluginmeta
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Create README.md
         run: |
-          repo=${{ steps.determine.outputs.repo }}
-          dock_image=${{ steps.determine.outputs.dock_image }}
-          docker run --rm localhost/$dock_image chris_plugin_info > /tmp/description.json
-          jq < /tmp/description.json  # pretty print in log
-          echo "title=$(jq -r '.title' < /tmp/description.json)" >> $GITHUB_OUTPUT
-
+          echo '${{ github.server_url }}/${{ github.repository }}' > README.md
       - name: Update DockerHub description
-        uses: peter-evans/dockerhub-description@v3
-        continue-on-error: true  # it is not crucial that this works
+        uses: peter-evans/dockerhub-description@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          short-description: ${{ steps.pluginmeta.outputs.title }}
-          readme-filepath: ./README.md
-          repository: ${{ steps.determine.outputs.repo }}
+          short-description: ChRIS plugin wrapper for N4BiasFieldCorrection
+      - name: Get preferred tag
+        id: preferred
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          set -o pipefail
+          echo '${{ toJSON(fromJSON(steps.meta.outputs.json).tags) }}' \
+            | jq -r 'map(select(startswith("ghcr.io") and (endswith("latest") | not))).[0]' \
+            | xargs printf "tag=%s\n" \
+            | tee --append "$GITHUB_OUTPUT"
+    outputs:
+      image: ${{ steps.preferred.outputs.tag }}
+  publish:
+    needs: build
+    if: needs.build.outputs.image
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Upload ChRIS Plugin
+        uses: FNNDSC/upload-chris-plugin@main
+        with:
+          dock_image: ${{ needs.build.outputs.image }}
+          pull: missing
+          username: ${{ secrets.CHRISPROJECT_USERNAME }}
+          password: ${{ secrets.CHRISPROJECT_PASSWORD }}
+          chris_url: https://cube.chrisproject.org/api/v1/
+          compute_names: NERC
